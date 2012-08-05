@@ -335,6 +335,7 @@
                        <executions>
                            <execution>
                                <id>update-whitesource</id>
+                               <phase>package</phase>
                                <goals>
                                    <goal>update</goal>
                                </goals>
