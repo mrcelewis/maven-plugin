@@ -25,7 +25,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.StringUtils;
 import org.whitesource.agent.api.ChecksumUtils;
 import org.whitesource.agent.api.dispatch.UpdateInventoryResult;
 import org.whitesource.agent.api.model.AgentProjectInfo;
@@ -205,13 +204,11 @@ public class UpdateMojo extends WhitesourceMojo {
             DependencyInfo dependencyInfo = getDependencyInfo(dependency);
 
             Artifact artifact = lut.get(dependency);
-            if (artifact != null) {
-                if (artifact.getFile().exists()) {
-                    try {
-                        dependencyInfo.setSha1(ChecksumUtils.calculateSHA1(artifact.getFile()));
-                    } catch (IOException e) {
-                        debug(Constants.ERROR_SHA1 + " for " + artifact.getId());
-                    }
+            if (artifact != null && artifact.getFile().exists()) {
+                try {
+                    dependencyInfo.setSha1(ChecksumUtils.calculateSHA1(artifact.getFile()));
+                } catch (IOException e) {
+                    debug(Constants.ERROR_SHA1 + " for " + artifact.getId());
                 }
             }
 
