@@ -25,6 +25,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.sonatype.aether.util.StringUtils;
 import org.whitesource.agent.api.ChecksumUtils;
 import org.whitesource.agent.api.dispatch.UpdateInventoryResult;
 import org.whitesource.agent.api.model.AgentProjectInfo;
@@ -33,6 +34,7 @@ import org.whitesource.agent.api.model.DependencyInfo;
 import org.whitesource.agent.api.model.ExclusionInfo;
 import org.whitesource.api.client.WssServiceException;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -126,6 +128,11 @@ public class UpdateMojo extends WhitesourceMojo {
 
     @Override
     public void doExecute() throws MojoExecutionException, MojoFailureException {
+        if (reactorProjects == null) {
+            info("No projects found. Skipping update");
+            return;
+        }
+
         // Collect OSS usage information
         Collection<AgentProjectInfo> projectInfos = new ArrayList<AgentProjectInfo>();
         for (MavenProject project : reactorProjects) {
@@ -147,9 +154,13 @@ public class UpdateMojo extends WhitesourceMojo {
     }
 
     private boolean shouldProcess(MavenProject project) {
+        if (project == null) {
+            return false;
+        }
+
         boolean process = true;
 
-        if (ignorePomModules && project.getPackaging().equals("pom")) {
+        if (ignorePomModules && "pom".equals(project.getPackaging())) {
             process = false;
         } else if (project.equals(mavenProject)) {
             process = !ignore;
@@ -165,11 +176,15 @@ public class UpdateMojo extends WhitesourceMojo {
     private boolean matchAny(String value, String[] patterns) {
         boolean match = false;
 
-        for (String pattern : patterns) {
-            String regex = pattern.replace(".", "\\.").replace("*", ".*");
-            if (value.matches(regex)) {
-                match = true;
-                break;
+        if (!StringUtils.isEmpty(value)) {
+            for (String pattern : patterns) {
+                if (!StringUtils.isEmpty(pattern)) {
+                    String regex = pattern.replace(".", "\\.").replace("*", ".*");
+                    if (value.matches(regex)) {
+                        match = true;
+                        break;
+                    }
+                }
             }
         }
 
@@ -204,11 +219,14 @@ public class UpdateMojo extends WhitesourceMojo {
             DependencyInfo dependencyInfo = getDependencyInfo(dependency);
 
             Artifact artifact = lut.get(dependency);
-            if (artifact != null && artifact.getFile().exists()) {
-                try {
-                    dependencyInfo.setSha1(ChecksumUtils.calculateSHA1(artifact.getFile()));
-                } catch (IOException e) {
-                    debug(Constants.ERROR_SHA1 + " for " + artifact.getId());
+            if (artifact != null) {
+                File artifactFile = artifact.getFile();
+                if (artifactFile != null && artifactFile.exists()) {
+                    try {
+                        dependencyInfo.setSha1(ChecksumUtils.calculateSHA1(artifactFile));
+                    } catch (IOException e) {
+                        debug(Constants.ERROR_SHA1 + " for " + artifact.getId());
+                    }
                 }
             }
 
@@ -319,7 +337,7 @@ public class UpdateMojo extends WhitesourceMojo {
 
         for (AgentProjectInfo projectInfo : projectInfos) {
             debug("Project coordiantes: " + projectInfo.getCoordinates().toString());
-            debug("Project parent coordiantes: " + projectInfo.getParentCoordinates().toString());
+            debug("Project parent coordiantes: " + (projectInfo.getParentCoordinates() == null ? "" : projectInfo.getParentCoordinates().toString()));
             debug("Project token: " + projectInfo.getProjectToken());
             debug("total # of dependencies: " + projectInfo.getDependencies().size());
             for (DependencyInfo info : projectInfo.getDependencies()) {

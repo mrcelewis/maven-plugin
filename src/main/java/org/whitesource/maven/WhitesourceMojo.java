@@ -77,6 +77,8 @@ public abstract class WhitesourceMojo extends AbstractMojo {
                 doExecute();
             } catch (MojoExecutionException e) {
                 handleError(e);
+            } catch (RuntimeException e) {
+                throw new MojoFailureException("Unexpected error", e);
             } finally {
                 if (service != null) {
                     service.shutdown();
