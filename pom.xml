@@ -29,8 +29,6 @@
         <connection>scm:git:git@github.com:whitesource/maven-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:whitesource/maven-plugin.git</developerConnection>
         <url>git@github.com:whitesource/maven-plugin.git</url>
-
-      <tag>HEAD</tag>
   </scm>
     <issueManagement>
         <url>https://github.com/whitesource/maven-plugin/issues</url>
@@ -211,7 +209,7 @@
                 <plugin>
                     <groupId>org.whitesource</groupId>
                     <artifactId>whitesource-maven-plugin</artifactId>
-                    <version>1.1.1</version>
+                    <version>1.1.2</version>
                     <configuration>
                         <orgToken>${whitesource.orgToken}</orgToken>
                         <projectToken>87162257-ec17-4fd1-a16a-34f295fdc729</projectToken>
