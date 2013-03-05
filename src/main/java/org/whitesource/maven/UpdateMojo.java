@@ -32,7 +32,7 @@ import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.api.model.Coordinates;
 import org.whitesource.agent.api.model.DependencyInfo;
 import org.whitesource.agent.api.model.ExclusionInfo;
-import org.whitesource.api.client.WssServiceException;
+import org.whitesource.agent.client.WssServiceException;
 
 import java.io.File;
 import java.io.IOException;

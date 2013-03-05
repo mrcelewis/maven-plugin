@@ -27,8 +27,8 @@ import org.apache.maven.project.MavenProject;
 import org.sonatype.aether.repository.Authentication;
 import org.sonatype.aether.repository.Proxy;
 import org.sonatype.aether.repository.RemoteRepository;
-import org.whitesource.api.client.ClientConstants;
-import org.whitesource.api.client.WhitesourceService;
+import org.whitesource.agent.client.ClientConstants;
+import org.whitesource.agent.client.WhitesourceService;
 
 /**
  * Concrete implementation holding common functionlity to all goals in this plugin.
