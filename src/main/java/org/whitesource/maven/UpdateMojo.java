@@ -36,10 +36,7 @@ import org.whitesource.agent.client.WssServiceException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Send updates of open source software usage information to White Source.
@@ -82,6 +79,14 @@ public class UpdateMojo extends WhitesourceMojo {
             property = Constants.MODULE_TOKENS,
             required = false)
     private Map<String, String> moduleTokens = new HashMap<String, String>();
+
+    /**
+     * Optional. Map of module artifactId to White Source project token.
+     */
+    @Parameter(alias = "specialModuleTokens",
+            property = Constants.SPECIAL_MODULE_TOKENS,
+            required = false)
+    private Properties specialModuleTokens = new Properties();
 
     /**
      * Optional. Set to true to ignore this maven project. Overrides any include patterns.
@@ -133,6 +138,8 @@ public class UpdateMojo extends WhitesourceMojo {
             return;
         }
 
+        init();
+
         // Collect OSS usage information
         Collection<AgentProjectInfo> projectInfos = new ArrayList<AgentProjectInfo>();
         for (MavenProject project : reactorProjects) {
@@ -150,6 +157,13 @@ public class UpdateMojo extends WhitesourceMojo {
             logResult(result);
         } catch (WssServiceException e) {
             throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
+        }
+    }
+
+    private void init() {
+        // copy token for modules with special names into moduleTokens.
+        for (Map.Entry<Object, Object> entry : specialModuleTokens.entrySet()) {
+            moduleTokens.put(entry.getKey().toString(), entry.getValue().toString());
         }
     }
 
