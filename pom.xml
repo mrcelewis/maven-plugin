@@ -288,15 +288,6 @@
                     <artifactId>maven-license-plugin</artifactId>
                     <version>1.9.0</version>
                 </plugin>
-                <plugin>
-                    <groupId>org.whitesource</groupId>
-                    <artifactId>whitesource-maven-plugin</artifactId>
-                    <version>1.1.2</version>
-                    <configuration>
-                        <orgToken>${whitesource.orgToken}</orgToken>
-                        <projectToken>87162257-ec17-4fd1-a16a-34f295fdc729</projectToken>
-                    </configuration>
-                </plugin>
             </plugins>
         </pluginManagement>
     </build>
