@@ -42,10 +42,10 @@ import java.util.*;
 
 /**
  * Send updates of open source software usage information to White Source.
- *
+ * <p/>
  * <p>
- *     Further documentation for the plugin and its usage can be found in the
- *     <a href="http://docs.whitesourcesoftware.com/display/serviceDocs/Maven+plugin">online documentation</a>.
+ * Further documentation for the plugin and its usage can be found in the
+ * <a href="http://docs.whitesourcesoftware.com/display/serviceDocs/Maven+plugin">online documentation</a>.
  * </p>
  *
  * @author Edo.Shor
@@ -68,7 +68,7 @@ public class UpdateMojo extends WhitesourceMojo {
     /**
      * Optional. Set to true to check policies.
      */
-    @Parameter( alias = "checkPolicies",
+    @Parameter(alias = "checkPolicies",
             property = Constants.CHECK_POLICICES,
             required = false,
             defaultValue = "true")
@@ -77,7 +77,7 @@ public class UpdateMojo extends WhitesourceMojo {
     /**
      * Output directory for checking policies results.
      */
-    @Parameter( alias = "outputDirectory",
+    @Parameter(alias = "outputDirectory",
             property = Constants.OUTPUT_DIRECTORY,
             required = false,
             defaultValue = "${project.reporting.outputDirectory}")
@@ -245,9 +245,9 @@ public class UpdateMojo extends WhitesourceMojo {
         boolean match = false;
 
         if (value != null) {
-            for (int i=0; i < patterns.length && !match; i++) {
+            for (int i = 0; i < patterns.length && !match; i++) {
                 String pattern = patterns[i];
-                if (pattern != null)  {
+                if (pattern != null) {
                     String regex = pattern.replace(".", "\\.").replace("*", ".*");
                     match = value.matches(regex);
                 }
@@ -325,21 +325,17 @@ public class UpdateMojo extends WhitesourceMojo {
     }
 
     private boolean match(Dependency dependency, Artifact artifact) {
-        boolean match = dependency.getGroupId().equals(artifact.getGroupId()) &&
+        return
+                dependency.getGroupId().equals(artifact.getGroupId()) &&
                 dependency.getArtifactId().equals(artifact.getArtifactId()) &&
-                dependency.getVersion().equals(artifact.getVersion());
-
-        match = match && (dependency.getClassifier() == null) ?
-                artifact.getClassifier() == null :
-                dependency.getClassifier().equals(artifact.getClassifier());
-
-        String artifactType = artifact.getType();
-        String dependencyType = dependency.getType();
-        match = match && (dependencyType == null) ?
-                artifactType == null || "jar".equals(artifactType) :
-                dependencyType.equals(artifactType);
-
-        return match;
+                dependency.getVersion().equals(artifact.getVersion()) &&
+                (dependency.getClassifier() == null) ?
+                    artifact.getClassifier() == null :
+                    dependency.getClassifier().equals(artifact.getClassifier()) &&
+                (dependency.getType() == null) ?
+                    artifact.getType() == null || "jar".equals(artifact.getType()) :
+                    dependency.getType().equals(artifact.getType())
+                ;
     }
 
     private DependencyInfo getDependencyInfo(Dependency dependency) {
