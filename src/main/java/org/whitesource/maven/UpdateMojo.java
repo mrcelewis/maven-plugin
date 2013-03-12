@@ -33,7 +33,6 @@ import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.api.model.Coordinates;
 import org.whitesource.agent.api.model.DependencyInfo;
 import org.whitesource.agent.api.model.ExclusionInfo;
-import org.whitesource.agent.client.WhitesourceService;
 import org.whitesource.agent.client.WssServiceException;
 import org.whitesource.agent.report.PolicyCheckReport;
 
@@ -245,14 +244,12 @@ public class UpdateMojo extends WhitesourceMojo {
     private boolean matchAny(String value, String[] patterns) {
         boolean match = false;
 
-        if (!StringUtils.isEmpty(value)) {
-            for (String pattern : patterns) {
-                if (!StringUtils.isEmpty(pattern)) {
+        if (value != null) {
+            for (int i=0; i < patterns.length && !match; i++) {
+                String pattern = patterns[i];
+                if (pattern != null)  {
                     String regex = pattern.replace(".", "\\.").replace("*", ".*");
-                    if (value.matches(regex)) {
-                        match = true;
-                        break;
-                    }
+                    match = value.matches(regex);
                 }
             }
         }
@@ -332,22 +329,15 @@ public class UpdateMojo extends WhitesourceMojo {
                 dependency.getArtifactId().equals(artifact.getArtifactId()) &&
                 dependency.getVersion().equals(artifact.getVersion());
 
-        if (match) {
-            if (dependency.getClassifier() == null) {
-                match = artifact.getClassifier() == null;
-            } else {
-                match = dependency.getClassifier().equals(artifact.getClassifier());
-            }
-        }
+        match = match && (dependency.getClassifier() == null) ?
+                artifact.getClassifier() == null :
+                dependency.getClassifier().equals(artifact.getClassifier());
 
-        if (match) {
-            String type = artifact.getType();
-            if (dependency.getType() == null) {
-                match = type == null || type.equals("jar");
-            } else {
-                match = dependency.getType().equals(type);
-            }
-        }
+        String artifactType = artifact.getType();
+        String dependencyType = dependency.getType();
+        match = match && (dependencyType == null) ?
+                artifactType == null || "jar".equals(artifactType) :
+                dependencyType.equals(artifactType);
 
         return match;
     }
