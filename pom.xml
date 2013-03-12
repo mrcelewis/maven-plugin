@@ -57,7 +57,7 @@
     </prerequisites>
 
     <properties>
-        <api.version>1.2.2</api.version>
+        <api.version>1.2.3</api.version>
         <maven.version>3.0</maven.version>
     </properties>
 
@@ -67,6 +67,11 @@
         <dependency>
             <groupId>org.whitesource</groupId>
             <artifactId>wss-agent-api-client</artifactId>
+            <version>${api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.whitesource</groupId>
+            <artifactId>wss-agent-report</artifactId>
             <version>${api.version}</version>
         </dependency>
 
@@ -291,7 +296,7 @@
                 <plugin>
                     <groupId>org.whitesource</groupId>
                     <artifactId>whitesource-maven-plugin</artifactId>
-                    <version>1.1.2</version>
+                    <version>1.1.4-SNAPSHOT</version>
                     <configuration>
                         <orgToken>${whitesource.orgToken}</orgToken>
                     </configuration>
@@ -362,19 +367,6 @@
             </activation>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.whitesource</groupId>
-                        <artifactId>whitesource-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>update-whitesource</id>
-                                <phase>deploy</phase>
-                                <goals>
-                                    <goal>update</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <plugin>
                         <groupId>com.github.github</groupId>
                         <artifactId>site-maven-plugin</artifactId>

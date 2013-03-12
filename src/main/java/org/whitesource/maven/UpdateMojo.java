@@ -27,12 +27,15 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.sonatype.aether.util.StringUtils;
 import org.whitesource.agent.api.ChecksumUtils;
+import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
 import org.whitesource.agent.api.dispatch.UpdateInventoryResult;
 import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.api.model.Coordinates;
 import org.whitesource.agent.api.model.DependencyInfo;
 import org.whitesource.agent.api.model.ExclusionInfo;
+import org.whitesource.agent.client.WhitesourceService;
 import org.whitesource.agent.client.WssServiceException;
+import org.whitesource.agent.report.PolicyCheckReport;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,6 +67,24 @@ public class UpdateMojo extends WhitesourceMojo {
     private String orgToken;
 
     /**
+     * Optional. Set to true to check policies.
+     */
+    @Parameter( alias = "checkPolicies",
+            property = Constants.CHECK_POLICICES,
+            required = false,
+            defaultValue = "true")
+    private boolean checkPolicies;
+
+    /**
+     * Output directory for checking policies results.
+     */
+    @Parameter( alias = "outputDirectory",
+            property = Constants.OUTPUT_DIRECTORY,
+            required = false,
+            defaultValue = "${project.reporting.outputDirectory}")
+    private File outputDirectory;
+
+    /**
      * Optional. Unique identifier of the White Source project to update.
      * If omitted, default naming convention will apply.
      */
@@ -81,7 +102,8 @@ public class UpdateMojo extends WhitesourceMojo {
     private Map<String, String> moduleTokens = new HashMap<String, String>();
 
     /**
-     * Optional. Map of module artifactId to White Source project token.
+     * Optional. Use name value pairs for specifying the project tokens to use for modules whose artifactId
+     * is not a valid XML tag.
      */
     @Parameter(alias = "specialModuleTokens",
             property = Constants.SPECIAL_MODULE_TOKENS,
@@ -152,11 +174,44 @@ public class UpdateMojo extends WhitesourceMojo {
         debugProjectInfos(projectInfos);
 
         // send to white source
-        try {
-            final UpdateInventoryResult result = service.update(orgToken, projectInfos);
-            logResult(result);
-        } catch (WssServiceException e) {
-            throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
+        if (projectInfos.isEmpty()) {
+            info("No open source information found.");
+        } else {
+            try {
+                UpdateInventoryResult updateResult;
+                if (checkPolicies) {
+                    info("Checking policies...");
+                    CheckPoliciesResult result = service.checkPolicies(orgToken, projectInfos);
+
+                    if (outputDirectory == null || !outputDirectory.mkdirs()) {
+                        warn("Output directory doesn't exist. Skipping policies check report.");
+                    } else {
+                        info("Generating policy check report");
+                        PolicyCheckReport report = new PolicyCheckReport(result);
+                        report.generate(outputDirectory, false);
+                    }
+
+                    if (result.hasRejections()) {
+                        String msg = "Some dependencies were rejected by the organization's policies.";
+                        error(msg);
+                        throw new MojoFailureException(msg); // this will break the build anyhow, ignoring failOnError.
+                    } else {
+                        info("All dependencies conform with the organization's policies.");
+                        info("Sending updates to White Source");
+                        updateResult = service.update(orgToken, projectInfos);
+                    }
+                } else {
+                    info("Sending updates to White Source");
+                    updateResult = service.update(orgToken, projectInfos);
+                }
+                logResult(updateResult);
+            } catch (WssServiceException e) {
+                throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
+            } catch (IOException e) {
+                throw new MojoExecutionException("Error generating report: " + e.getMessage(), e);
+            } finally {
+                service.shutdown();
+            }
         }
     }
 

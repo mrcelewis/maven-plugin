@@ -29,6 +29,8 @@ public final class Constants {
 
     public static final String PLUGIN_PREFIX = "org.whitesource.";
     public static final String ORG_TOKEN = PLUGIN_PREFIX + "orgToken";
+    public static final String CHECK_POLICICES = PLUGIN_PREFIX + "checkPolicies";
+    public static final String OUTPUT_DIRECTORY = PLUGIN_PREFIX + "outputDirectory";
 	public static final String PROJECT_TOKEN = PLUGIN_PREFIX + "projectToken";
     public static final String MODULE_TOKENS = PLUGIN_PREFIX + "moduleTokens";
     public static final String SPECIAL_MODULE_TOKENS = PLUGIN_PREFIX + "specialModuleTokens";
@@ -36,6 +38,8 @@ public final class Constants {
     public static final String INCLUDES = PLUGIN_PREFIX + "includes";
     public static final String EXCLUDES = PLUGIN_PREFIX + "excludes";
     public static final String IGNORE_POM_MODULES = PLUGIN_PREFIX + "ignorePomModules";
+
+
 
 	/* --- Errors --- */
 

@@ -147,4 +147,25 @@ public abstract class WhitesourceMojo extends AbstractMojo {
             log.warn(content, error);
         }
     }
+
+    protected void warn(CharSequence content) {
+        final Log log = getLog();
+        if (log != null) {
+            log.warn(content);
+        }
+    }
+
+    protected void error(CharSequence content, Throwable error) {
+        final Log log = getLog();
+        if (log != null) {
+            log.error(content, error);
+        }
+    }
+
+    protected void error(CharSequence content) {
+        final Log log = getLog();
+        if (log != null) {
+            log.error(content);
+        }
+    }
 }
