@@ -25,7 +25,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.sonatype.aether.util.StringUtils;
 import org.whitesource.agent.api.ChecksumUtils;
 import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
 import org.whitesource.agent.api.dispatch.UpdateInventoryResult;
@@ -53,8 +52,7 @@ import java.util.*;
 @Mojo(name = "update",
         defaultPhase = LifecyclePhase.PACKAGE,
         requiresDependencyResolution = ResolutionScope.TEST,
-        aggregator = true
-)
+        aggregator = true )
 public class UpdateMojo extends WhitesourceMojo {
 
     /**
@@ -159,58 +157,17 @@ public class UpdateMojo extends WhitesourceMojo {
             return;
         }
 
+        // initialize
         init();
 
         // Collect OSS usage information
-        Collection<AgentProjectInfo> projectInfos = new ArrayList<AgentProjectInfo>();
-        for (MavenProject project : reactorProjects) {
-            if (shouldProcess(project)) {
-                projectInfos.add(processProject(project));
-            } else {
-                info("skipping " + project.getId());
-            }
-        }
-        debugProjectInfos(projectInfos);
+        Collection<AgentProjectInfo> projectInfos = extractProjectInfos();
 
         // send to white source
-        if (projectInfos.isEmpty()) {
+        if (projectInfos == null || projectInfos.isEmpty()) {
             info("No open source information found.");
         } else {
-            try {
-                UpdateInventoryResult updateResult;
-                if (checkPolicies) {
-                    info("Checking policies...");
-                    CheckPoliciesResult result = service.checkPolicies(orgToken, projectInfos);
-
-                    if (outputDirectory == null || !outputDirectory.mkdirs()) {
-                        warn("Output directory doesn't exist. Skipping policies check report.");
-                    } else {
-                        info("Generating policy check report");
-                        PolicyCheckReport report = new PolicyCheckReport(result);
-                        report.generate(outputDirectory, false);
-                    }
-
-                    if (result.hasRejections()) {
-                        String msg = "Some dependencies were rejected by the organization's policies.";
-                        error(msg);
-                        throw new MojoFailureException(msg); // this will break the build anyhow, ignoring failOnError.
-                    } else {
-                        info("All dependencies conform with the organization's policies.");
-                        info("Sending updates to White Source");
-                        updateResult = service.update(orgToken, projectInfos);
-                    }
-                } else {
-                    info("Sending updates to White Source");
-                    updateResult = service.update(orgToken, projectInfos);
-                }
-                logResult(updateResult);
-            } catch (WssServiceException e) {
-                throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
-            } catch (IOException e) {
-                throw new MojoExecutionException("Error generating report: " + e.getMessage(), e);
-            } finally {
-                service.shutdown();
-            }
+            sendUpdate(projectInfos);
         }
     }
 
@@ -221,10 +178,24 @@ public class UpdateMojo extends WhitesourceMojo {
         }
     }
 
-    private boolean shouldProcess(MavenProject project) {
-        if (project == null) {
-            return false;
+    private Collection<AgentProjectInfo> extractProjectInfos() {
+        Collection<AgentProjectInfo> projectInfos = new ArrayList<AgentProjectInfo>();
+
+        for (MavenProject project : reactorProjects) {
+            if (shouldProcess(project)) {
+                projectInfos.add(processProject(project));
+            } else {
+                info("skipping " + project.getId());
+            }
         }
+
+        debugProjectInfos(projectInfos);
+
+        return projectInfos;
+    }
+
+    private boolean shouldProcess(MavenProject project) {
+        if (project == null) { return false; }
 
         boolean process = true;
 
@@ -242,15 +213,15 @@ public class UpdateMojo extends WhitesourceMojo {
     }
 
     private boolean matchAny(String value, String[] patterns) {
+        if (value == null) { return false; }
+
         boolean match = false;
 
-        if (value != null) {
-            for (int i=0; i < patterns.length && !match; i++) {
-                String pattern = patterns[i];
-                if (pattern != null)  {
-                    String regex = pattern.replace(".", "\\.").replace("*", ".*");
-                    match = value.matches(regex);
-                }
+        for (int i=0; i < patterns.length && !match; i++) {
+            String pattern = patterns[i];
+            if (pattern != null)  {
+                String regex = pattern.replace(".", "\\.").replace("*", ".*");
+                match = value.matches(regex);
             }
         }
 
@@ -327,24 +298,24 @@ public class UpdateMojo extends WhitesourceMojo {
     private boolean match(Dependency dependency, Artifact artifact) {
         boolean match = dependency.getGroupId().equals(artifact.getGroupId()) &&
                 dependency.getArtifactId().equals(artifact.getArtifactId()) &&
-                dependency.getVersion().equals(artifact.getVersion()) &&
-                (dependency.getClassifier() == null) ?
-                artifact.getClassifier() == null :
-                dependency.getClassifier().equals(artifact.getClassifier()) &&
-                (dependency.getType() == null) ?
-                        artifact.getType() == null || "jar".equals(artifact.getType()) :
-                        dependency.getType().equals(artifact.getType())
-                ;
+                dependency.getVersion().equals(artifact.getVersion());
 
-        match = match && (dependency.getClassifier() == null) ?
-                artifact.getClassifier() == null :
-                dependency.getClassifier().equals(artifact.getClassifier());
+        if (match) {
+            if (dependency.getClassifier() == null) {
+                match = artifact.getClassifier() == null;
+            } else {
+                match = dependency.getClassifier().equals(artifact.getClassifier());
+            }
+        }
 
-        String artifactType = artifact.getType();
-        String dependencyType = dependency.getType();
-        match = match && (dependencyType == null) ?
-                artifactType == null || "jar".equals(artifactType) :
-                dependencyType.equals(artifactType);
+        if (match) {
+            String type = artifact.getType();
+            if (dependency.getType() == null) {
+                match = type == null || "jar".equals(type);
+            } else {
+                match = dependency.getType().equals(type);
+            }
+        }
 
         return match;
     }
@@ -369,6 +340,42 @@ public class UpdateMojo extends WhitesourceMojo {
         }
 
         return info;
+    }
+
+    private void sendUpdate(Collection<AgentProjectInfo> projectInfos) throws MojoFailureException, MojoExecutionException {
+        try {
+            UpdateInventoryResult updateResult;
+            if (checkPolicies) {
+                info("Checking policies...");
+                CheckPoliciesResult result = service.checkPolicies(orgToken, projectInfos);
+
+                if (outputDirectory == null || !outputDirectory.mkdirs()) {
+                    warn("Output directory doesn't exist. Skipping policies check report.");
+                } else {
+                    info("Generating policy check report");
+                    PolicyCheckReport report = new PolicyCheckReport(result);
+                    report.generate(outputDirectory, false);
+                }
+
+                if (result.hasRejections()) {
+                    String msg = "Some dependencies were rejected by the organization's policies.";
+                    error(msg);
+                    throw new MojoFailureException(msg); // this will break the build anyhow, ignoring failOnError.
+                } else {
+                    info("All dependencies conform with the organization's policies.");
+                    info("Sending updates to White Source");
+                    updateResult = service.update(orgToken, projectInfos);
+                }
+            } else {
+                info("Sending updates to White Source");
+                updateResult = service.update(orgToken, projectInfos);
+            }
+            logResult(updateResult);
+        } catch (WssServiceException e) {
+            throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error generating report: " + e.getMessage(), e);
+        }
     }
 
     private void logResult(UpdateInventoryResult result) {
