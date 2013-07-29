@@ -9,7 +9,7 @@
 
     <groupId>org.whitesource</groupId>
     <artifactId>whitesource-maven-plugin</artifactId>
-    <version>1.1.5</version>
+    <version>1.1.6-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>White Source maven plugin</name>
@@ -57,7 +57,7 @@
     </prerequisites>
 
     <properties>
-        <api.version>1.2.3</api.version>
+        <api.version>1.2.5-SNAPSHOT</api.version>
         <maven.version>3.0</maven.version>
     </properties>
 
@@ -296,9 +296,10 @@
                 <plugin>
                     <groupId>org.whitesource</groupId>
                     <artifactId>whitesource-maven-plugin</artifactId>
-                    <version>1.1.3</version>
+                    <version>1.1.6-SNAPSHOT</version>
                     <configuration>
                         <orgToken>${whitesource.orgToken}</orgToken>
+                        <product>Maven plugin</product>
                     </configuration>
                 </plugin>
             </plugins>

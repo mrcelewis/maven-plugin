@@ -15,6 +15,7 @@
  */
 package org.whitesource.maven;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
@@ -62,6 +63,22 @@ public class UpdateMojo extends WhitesourceMojo {
             property = Constants.ORG_TOKEN,
             required = true)
     private String orgToken;
+
+    /**
+     * Product to update Name or Unique identifier.
+     */
+    @Parameter(alias = "product",
+            property = Constants.PRODUCT,
+            required = false)
+    private String product;
+
+    /**
+     * Product to update version.
+     */
+    @Parameter(alias = "productVersion",
+            property = Constants.PRODUCT_VERSION,
+            required = false)
+    private String productVersion;
 
     /**
      * Optional. Set to true to check policies.
@@ -175,6 +192,17 @@ public class UpdateMojo extends WhitesourceMojo {
         // copy token for modules with special names into moduleTokens.
         for (Map.Entry<Object, Object> entry : specialModuleTokens.entrySet()) {
             moduleTokens.put(entry.getKey().toString(), entry.getValue().toString());
+        }
+
+        // take product name and version from top level project
+        MavenProject topLevelProject = session.getTopLevelProject();
+        if (topLevelProject != null) {
+            if (StringUtils.isBlank(product)) {
+                product = topLevelProject.getName();
+            }
+            if (StringUtils.isBlank(product)) {
+                product = topLevelProject.getArtifactId();
+            }
         }
     }
 
@@ -347,9 +375,10 @@ public class UpdateMojo extends WhitesourceMojo {
             UpdateInventoryResult updateResult;
             if (checkPolicies) {
                 info("Checking policies...");
-                CheckPoliciesResult result = service.checkPolicies(orgToken, projectInfos);
+                CheckPoliciesResult result = service.checkPolicies(orgToken, product, productVersion, projectInfos);
 
-                if (outputDirectory == null || !outputDirectory.mkdirs()) {
+                if (outputDirectory == null ||
+                        (!outputDirectory.exists() && !outputDirectory.mkdirs())) {
                     warn("Output directory doesn't exist. Skipping policies check report.");
                 } else {
                     info("Generating policy check report");
@@ -360,15 +389,15 @@ public class UpdateMojo extends WhitesourceMojo {
                 if (result.hasRejections()) {
                     String msg = "Some dependencies were rejected by the organization's policies.";
                     error(msg);
-                    throw new MojoFailureException(msg); // this will break the build anyhow, ignoring failOnError.
+                    throw new MojoExecutionException(msg); // this is handled in base class
                 } else {
                     info("All dependencies conform with the organization's policies.");
                     info("Sending updates to White Source");
-                    updateResult = service.update(orgToken, projectInfos);
+                    updateResult = service.update(orgToken, product, productVersion, projectInfos);
                 }
             } else {
                 info("Sending updates to White Source");
-                updateResult = service.update(orgToken, projectInfos);
+                updateResult = service.update(orgToken, product, productVersion, projectInfos);
             }
             logResult(updateResult);
         } catch (WssServiceException e) {

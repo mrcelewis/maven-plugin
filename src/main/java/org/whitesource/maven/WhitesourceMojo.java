@@ -31,7 +31,7 @@ import org.whitesource.agent.client.ClientConstants;
 import org.whitesource.agent.client.WhitesourceService;
 
 /**
- * Concrete implementation holding common functionlity to all goals in this plugin.
+ * Concrete implementation holding common functionality to all goals in this plugin.
  *
  * @author Edo.Shor
  */
