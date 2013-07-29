@@ -84,7 +84,7 @@ public class UpdateMojo extends WhitesourceMojo {
      * Optional. Set to true to check policies.
      */
     @Parameter( alias = "checkPolicies",
-            property = Constants.CHECK_POLICICES,
+            property = Constants.CHECK_POLICIES,
             required = false,
             defaultValue = "true")
     private boolean checkPolicies;
