@@ -29,8 +29,7 @@
         <connection>scm:git:git@github.com:whitesource/maven-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:whitesource/maven-plugin.git</developerConnection>
         <url>git@github.com:whitesource/maven-plugin.git</url>
-      <tag>release-tag-1.1.5</tag>
-  </scm>
+    </scm>
     <issueManagement>
         <url>https://github.com/whitesource/maven-plugin/issues</url>
         <system>GitHub Issues</system>
@@ -57,7 +56,7 @@
     </prerequisites>
 
     <properties>
-        <api.version>1.2.5-SNAPSHOT</api.version>
+        <api.version>1.2.5</api.version>
         <maven.version>3.0</maven.version>
     </properties>
 
@@ -371,7 +370,7 @@
                     <plugin>
                         <groupId>com.github.github</groupId>
                         <artifactId>site-maven-plugin</artifactId>
-                        <version>0.7</version>
+                        <version>0.8</version>
                         <configuration>
                             <server>github</server>
                             <force>true</force>
