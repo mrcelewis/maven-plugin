@@ -56,7 +56,7 @@
     </prerequisites>
 
     <properties>
-        <api.version>1.2.5</api.version>
+        <api.version>1.2.6-SNAPSHOT</api.version>
         <maven.version>3.0</maven.version>
     </properties>
 

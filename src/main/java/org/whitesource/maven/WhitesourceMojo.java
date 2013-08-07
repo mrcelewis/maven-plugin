@@ -98,8 +98,8 @@ public abstract class WhitesourceMojo extends AbstractMojo {
         service = new WhitesourceService(Constants.AGENT_TYPE, Constants.AGENT_VERSION, serviceUrl);
 
         // get proxy configuration from session
-        final Proxy proxy = session.getRepositorySession().getProxySelector().getProxy(
-                new RemoteRepository().setUrl(serviceUrl));
+        RemoteRepository dummyRepo = new RemoteRepository().setUrl(serviceUrl);
+        final Proxy proxy = session.getRepositorySession().getProxySelector().getProxy(dummyRepo);
         if (proxy != null) {
             String username = null;
             String password = null;
