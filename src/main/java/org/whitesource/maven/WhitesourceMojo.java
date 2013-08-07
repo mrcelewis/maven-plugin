@@ -108,12 +108,7 @@ public abstract class WhitesourceMojo extends AbstractMojo {
                 username = auth.getUsername();
                 password = auth.getPassword();
             }
-
-            service.getClient().setProxy(
-                    proxy.getType() + "://" + proxy.getHost(),
-                    proxy.getPort(),
-                    username,
-                    password);
+            service.getClient().setProxy(proxy.getHost(), proxy.getPort(), username, password);
         }
     }
 
