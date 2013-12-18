@@ -32,6 +32,7 @@ public final class Constants {
     public static final String PRODUCT = PLUGIN_PREFIX + "product";
     public static final String PRODUCT_VERSION = PLUGIN_PREFIX + "productVersion";
     public static final String CHECK_POLICIES = PLUGIN_PREFIX + "checkPolicies";
+    public static final String IGNORE_TEST_SCOPE_DEPENDENCIES = PLUGIN_PREFIX + "ignoreTestScopeDependencies";
     public static final String OUTPUT_DIRECTORY = PLUGIN_PREFIX + "outputDirectory";
 	public static final String PROJECT_TOKEN = PLUGIN_PREFIX + "projectToken";
     public static final String MODULE_TOKENS = PLUGIN_PREFIX + "moduleTokens";

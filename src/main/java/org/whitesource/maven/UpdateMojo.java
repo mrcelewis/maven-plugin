@@ -90,6 +90,15 @@ public class UpdateMojo extends WhitesourceMojo {
     private boolean checkPolicies;
 
     /**
+     * Optional. Set to false to include test scope dependencies.
+     */
+    @Parameter(alias = "ignoreTestScopeDependencies",
+            property = Constants.IGNORE_TEST_SCOPE_DEPENDENCIES,
+            required = false,
+            defaultValue = "true")
+    private boolean ignoreTestScopeDependencies;
+
+    /**
      * Output directory for checking policies results.
      */
     @Parameter( alias = "outputDirectory",
@@ -164,6 +173,9 @@ public class UpdateMojo extends WhitesourceMojo {
             required = true,
             readonly = true)
     private Collection<MavenProject> reactorProjects;
+
+    public UpdateMojo() {
+    }
 
     /* --- Concrete implementation methods --- */
 
@@ -281,6 +293,10 @@ public class UpdateMojo extends WhitesourceMojo {
         // dependencies
         Map<Dependency, Artifact> lut = createLookupTable(project);
         for (Dependency dependency : project.getDependencies()) {
+            if (ignoreTestScopeDependencies && Artifact.SCOPE_TEST.equals(dependency.getScope())) {
+                continue; // exclude test scope dependencies from being sent to the server
+            }
+
             DependencyInfo dependencyInfo = getDependencyInfo(dependency);
 
             Artifact artifact = lut.get(dependency);
