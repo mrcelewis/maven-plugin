@@ -27,6 +27,11 @@ import org.apache.maven.project.MavenProject;
 import org.sonatype.aether.repository.Authentication;
 import org.sonatype.aether.repository.Proxy;
 import org.sonatype.aether.repository.RemoteRepository;
+//import org.eclipse.aether.RepositorySystemSession;
+//import org.eclipse.aether.repository.Authentication;
+//import org.eclipse.aether.repository.AuthenticationContext;
+//import org.eclipse.aether.repository.Proxy;
+//import org.eclipse.aether.repository.RemoteRepository;
 import org.whitesource.agent.client.ClientConstants;
 import org.whitesource.agent.client.WhitesourceService;
 
@@ -110,6 +115,29 @@ public abstract class WhitesourceMojo extends AbstractMojo {
             }
             service.getClient().setProxy(proxy.getHost(), proxy.getPort(), username, password);
         }
+//        //TODO: uncomment the code below and replace with the above when we need to support maven 3.1.1 (which migrated from Sonatype Aether to Eclipse Aether)
+//        RemoteRepository.Builder remoteRepositoryBuilder = new RemoteRepository.Builder(null, null, serviceUrl);
+//        RemoteRepository dummyRepo = remoteRepositoryBuilder.build();
+//        RepositorySystemSession repositorySystemSession = session.getRepositorySession();
+//        final Proxy proxy = repositorySystemSession.getProxySelector().getProxy(dummyRepo);
+//        if (proxy != null) {
+//            String username = null;
+//            String password = null;
+//            final Authentication auth = proxy.getAuthentication();
+//            if (auth != null) {
+//                dummyRepo = remoteRepositoryBuilder.setAuthentication(auth).build();
+//                AuthenticationContext authenticationContext = AuthenticationContext.forRepository( repositorySystemSession, dummyRepo );
+//                try {
+//                    auth.fill(authenticationContext, null, null);
+//                    username = authenticationContext.get(AuthenticationContext.USERNAME, String.class);
+//                    password = authenticationContext.get(AuthenticationContext.PASSWORD, String.class);
+//                }
+//                finally {
+//                    AuthenticationContext.close(authenticationContext);
+//                }
+//            }
+//            service.getClient().setProxy(proxy.getHost(), proxy.getPort(), username, password);
+//        }
     }
 
     protected void handleError(Exception error) throws MojoFailureException {

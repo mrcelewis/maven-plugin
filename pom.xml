@@ -9,7 +9,7 @@
 
     <groupId>org.whitesource</groupId>
     <artifactId>whitesource-maven-plugin</artifactId>
-    <version>1.1.7-SNAPSHOT</version>
+    <version>1.1.8-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>White Source maven plugin</name>
@@ -40,9 +40,9 @@
     </organization>
     <developers>
         <developer>
-            <id>edo.shor</id>
-            <name>Edo Shor</name>
-            <email>edo.shor@whitesourcesoftware.com</email>
+            <id>itai.marko</id>
+            <name>Itai Marko</name>
+            <email>itai.marko@whitesourcesoftware.com</email>
         </developer>
         <developer>
             <id>tom.shapira</id>
@@ -57,7 +57,8 @@
 
     <properties>
         <api.version>1.2.6</api.version>
-        <maven.version>3.0</maven.version>
+        <maven.version>3.0.4</maven.version>
+        <!--<maven.version>3.1.1</maven.version>-->
     </properties>
 
     <dependencies>
