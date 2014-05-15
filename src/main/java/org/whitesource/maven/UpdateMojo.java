@@ -380,7 +380,7 @@ public class UpdateMojo extends WhitesourceMojo {
         // exclusions
         Collection<ExclusionInfo> exclusions = info.getExclusions();
         for (Exclusion exclusion : dependency.getExclusions()) {
-            exclusions.add(new ExclusionInfo(exclusion.getGroupId(), exclusion.getArtifactId()));
+            exclusions.add(new ExclusionInfo(exclusion.getArtifactId(), exclusion.getGroupId()));
         }
 
         return info;
