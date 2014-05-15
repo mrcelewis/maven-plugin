@@ -6,10 +6,10 @@
     <link>http://www.github.com/whitesource/maven-plugin</link>
     <description>White Source maven plugin - Checkstyle report</description>
     <language>en-us</language>
-    <copyright>&#169;2011 - 2013 White Source</copyright>
+    <copyright>&#169;2011 - 2014 White Source</copyright>
     <item>
       <title>File: 3,
-             Errors: 155,
+             Errors: 170,
              Warnings: 0,
              Infos: 0
       </title>
@@ -38,7 +38,7 @@
                   0
                 </td>
                 <td>
-                  43
+                  45
                 </td>
               </tr>
                           <tr>
@@ -52,7 +52,7 @@
                   0
                 </td>
                 <td>
-                  42
+                  52
                 </td>
               </tr>
                           <tr>
@@ -66,7 +66,7 @@
                   0
                 </td>
                 <td>
-                  70
+                  73
                 </td>
               </tr>
                       </tbody>
