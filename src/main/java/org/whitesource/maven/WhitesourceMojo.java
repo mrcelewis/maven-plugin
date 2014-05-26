@@ -27,13 +27,14 @@ import org.apache.maven.project.MavenProject;
 import org.sonatype.aether.repository.Authentication;
 import org.sonatype.aether.repository.Proxy;
 import org.sonatype.aether.repository.RemoteRepository;
+import org.whitesource.agent.client.ClientConstants;
+import org.whitesource.agent.client.WhitesourceService;
+
 //import org.eclipse.aether.RepositorySystemSession;
 //import org.eclipse.aether.repository.Authentication;
 //import org.eclipse.aether.repository.AuthenticationContext;
 //import org.eclipse.aether.repository.Proxy;
 //import org.eclipse.aether.repository.RemoteRepository;
-import org.whitesource.agent.client.ClientConstants;
-import org.whitesource.agent.client.WhitesourceService;
 
 /**
  * Concrete implementation holding common functionality to all goals in this plugin.
