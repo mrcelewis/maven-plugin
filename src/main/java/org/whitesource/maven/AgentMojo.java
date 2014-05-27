@@ -3,13 +3,16 @@ package org.whitesource.maven;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.whitesource.agent.api.ChecksumUtils;
+import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
 import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.api.model.Coordinates;
 import org.whitesource.agent.api.model.DependencyInfo;
 import org.whitesource.agent.api.model.ExclusionInfo;
+import org.whitesource.agent.report.PolicyCheckReport;
 
 import java.io.File;
 import java.io.IOException;
@@ -132,6 +135,10 @@ public abstract class AgentMojo extends WhitesourceMojo {
             required = true,
             readonly = true)
     protected Collection<MavenProject> reactorProjects;
+
+    @Parameter(defaultValue = "false",
+            required = false)
+    protected boolean reportAsJson;
 
     /* --- Protected methods --- */
 
@@ -318,6 +325,20 @@ public abstract class AgentMojo extends WhitesourceMojo {
         }
 
         return process;
+    }
+
+    protected void generateReport(CheckPoliciesResult result) throws MojoExecutionException {
+        info("Generating policy check report");
+        try {
+            PolicyCheckReport report = new PolicyCheckReport(result);
+            if (reportAsJson) {
+                report.generateJson(outputDirectory);
+            } else {
+                report.generate(outputDirectory, false);
+            }
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error generating report: " + e.getMessage(), e);
+        }
     }
 
 }

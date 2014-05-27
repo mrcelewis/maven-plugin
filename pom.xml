@@ -56,7 +56,7 @@
     </prerequisites>
 
     <properties>
-        <api.version>1.2.6</api.version>
+        <api.version>1.2.7</api.version>
         <maven.version>3.0</maven.version>
         <!--<maven.version>3.1.1</maven.version>-->
     </properties>
@@ -100,6 +100,13 @@
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
             <version>3.0.1</version>
+        </dependency>
+
+        <!-- Gson -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.2.2</version>
         </dependency>
 
         <!-- Testing -->

@@ -25,9 +25,7 @@ import org.apache.maven.project.MavenProject;
 import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
 import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.client.WssServiceException;
-import org.whitesource.agent.report.PolicyCheckReport;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -75,6 +73,8 @@ public class CheckPoliciesMojo extends AgentMojo {
         }
     }
 
+    /* --- Private methods --- */
+
     private void init() {
         // copy token for modules with special names into moduleTokens.
         for (Map.Entry<Object, Object> entry : specialModuleTokens.entrySet()) {
@@ -102,22 +102,17 @@ public class CheckPoliciesMojo extends AgentMojo {
                     (!outputDirectory.exists() && !outputDirectory.mkdirs())) {
                 warn("Output directory doesn't exist. Skipping policies check report.");
             } else {
-                info("Generating policy check report");
-                PolicyCheckReport report = new PolicyCheckReport(result);
-                report.generate(outputDirectory, false);
+                generateReport(result);
             }
 
             if (result.hasRejections()) {
                 String msg = "Some dependencies were rejected by the organization's policies.";
-                error(msg);
                 throw new MojoExecutionException(msg); // this is handled in base class
             } else {
                 info("All dependencies conform with the organization's policies.");
             }
         } catch (WssServiceException e) {
             throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
-        } catch (IOException e) {
-            throw new MojoExecutionException("Error generating report: " + e.getMessage(), e);
         }
     }
 

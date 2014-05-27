@@ -143,11 +143,11 @@ public abstract class WhitesourceMojo extends AbstractMojo {
 
     protected void handleError(Exception error) throws MojoFailureException {
         String message = error.getMessage();
-
         if (failOnError) {
-            throw new MojoFailureException(message, error);
+            debug(message, error);
+            throw new MojoFailureException(message);
         } else {
-            warn(message, error);
+            error(message, error);
         }
     }
 
@@ -155,6 +155,13 @@ public abstract class WhitesourceMojo extends AbstractMojo {
         final Log log = getLog();
         if (log != null) {
             log.debug(content);
+        }
+    }
+
+    protected void debug(CharSequence content, Throwable error) {
+        final Log log = getLog();
+        if (log != null) {
+            log.debug(content, error);
         }
     }
 
@@ -168,7 +175,8 @@ public abstract class WhitesourceMojo extends AbstractMojo {
     protected void warn(CharSequence content, Throwable error) {
         final Log log = getLog();
         if (log != null) {
-            log.warn(content, error);
+            log.debug(content, error);
+            log.warn(content);
         }
     }
 
@@ -182,7 +190,8 @@ public abstract class WhitesourceMojo extends AbstractMojo {
     protected void error(CharSequence content, Throwable error) {
         final Log log = getLog();
         if (log != null) {
-            log.error(content, error);
+            log.debug(content, error);
+            log.error(content);
         }
     }
 
