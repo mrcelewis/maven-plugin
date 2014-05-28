@@ -8,8 +8,8 @@
     <language>en-us</language>
     <copyright>&#169;2011 - 2014 White Source</copyright>
     <item>
-      <title>File: 3,
-             Errors: 170,
+      <title>File: 5,
+             Errors: 222,
              Warnings: 0,
              Infos: 0
       </title>
@@ -52,7 +52,21 @@
                   0
                 </td>
                 <td>
-                  52
+                  56
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.github.com/whitesource/maven-plugin/checkstyle.html#org.whitesource.maven.AgentMojo.java">org/whitesource/maven/AgentMojo.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  79
                 </td>
               </tr>
                           <tr>
@@ -66,7 +80,21 @@
                   0
                 </td>
                 <td>
-                  73
+                  24
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.github.com/whitesource/maven-plugin/checkstyle.html#org.whitesource.maven.CheckPoliciesMojo.java">org/whitesource/maven/CheckPoliciesMojo.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  18
                 </td>
               </tr>
                       </tbody>

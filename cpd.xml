@@ -1,3 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <pmd-cpd>
+<duplication lines="25" tokens="110">
+<file line="72" path="/var/lib/jenkins/workspace/release-site-maven-plugin/src/main/java/org/whitesource/maven/CheckPoliciesMojo.java"/>
+<file line="83" path="/var/lib/jenkins/workspace/release-site-maven-plugin/src/main/java/org/whitesource/maven/UpdateMojo.java"/>
+<codefragment>
+<![CDATA[
+            sendCheckPolicies(projectInfos);
+        }
+    }
+
+    /* --- Private methods --- */
+
+    private void init() {
+        // copy token for modules with special names into moduleTokens.
+        for (Map.Entry<Object, Object> entry : specialModuleTokens.entrySet()) {
+            moduleTokens.put(entry.getKey().toString(), entry.getValue().toString());
+        }
+
+        // take product name and version from top level project
+        MavenProject topLevelProject = session.getTopLevelProject();
+        if (topLevelProject != null) {
+            if (StringUtils.isBlank(product)) {
+                product = topLevelProject.getName();
+            }
+            if (StringUtils.isBlank(product)) {
+                product = topLevelProject.getArtifactId();
+            }
+        }
+    }
+
+    private void sendCheckPolicies(Collection<AgentProjectInfo> projectInfos) throws MojoFailureException, MojoExecutionException {
+]]>
+</codefragment>
+</duplication>
 </pmd-cpd>
