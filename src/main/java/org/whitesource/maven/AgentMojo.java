@@ -1,17 +1,21 @@
 package org.whitesource.maven;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
+import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
+import org.apache.maven.shared.dependency.graph.DependencyNode;
 import org.whitesource.agent.api.ChecksumUtils;
 import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
-import org.whitesource.agent.api.model.AgentProjectInfo;
-import org.whitesource.agent.api.model.Coordinates;
-import org.whitesource.agent.api.model.DependencyInfo;
-import org.whitesource.agent.api.model.ExclusionInfo;
+import org.whitesource.agent.api.dispatch.GetInHouseRulesResult;
+import org.whitesource.agent.api.model.*;
+import org.whitesource.agent.client.WssServiceException;
 import org.whitesource.agent.report.PolicyCheckReport;
 
 import java.io.File;
@@ -140,6 +144,20 @@ public abstract class AgentMojo extends WhitesourceMojo {
             required = false)
     protected boolean reportAsJson;
 
+    /**
+     * Optional. Set to true to recursively resolve and send transitive dependencies of internal dependencies to WhiteSource.
+     * Should only be set to 'true' if any internal (in-house) dependencies are used in the project.
+     */
+    @Parameter(defaultValue = "false",
+            required = false)
+    protected boolean resolveInHouseDependencies;
+
+    /**
+     * The dependency tree builder to use.
+     */
+    @Component( hint = "default" )
+    private DependencyGraphBuilder dependencyGraphBuilder;
+
     /* --- Protected methods --- */
 
     protected DependencyInfo getDependencyInfo(Dependency dependency) {
@@ -157,9 +175,24 @@ public abstract class AgentMojo extends WhitesourceMojo {
 
         // exclusions
         Collection<ExclusionInfo> exclusions = info.getExclusions();
-        for (Exclusion exclusion : dependency.getExclusions()) {
+        for (Exclusion exclusion : (List<Exclusion>) dependency.getExclusions()) {
             exclusions.add(new ExclusionInfo(exclusion.getArtifactId(), exclusion.getGroupId()));
         }
+
+        return info;
+    }
+
+    protected DependencyInfo getDependencyInfo(Artifact artifact) {
+        DependencyInfo info = new DependencyInfo();
+
+        // dependency data
+        info.setGroupId(artifact.getGroupId());
+        info.setArtifactId(artifact.getArtifactId());
+        info.setVersion(artifact.getVersion());
+        info.setScope(artifact.getScope());
+        info.setClassifier(artifact.getClassifier());
+        info.setOptional(artifact.isOptional());
+        info.setType(artifact.getType());
 
         return info;
     }
@@ -181,7 +214,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
         debug("----------------- dump finished -----------------");
     }
 
-    protected AgentProjectInfo processProject(MavenProject project) {
+    protected AgentProjectInfo processProject(MavenProject project) throws MojoExecutionException {
         long startTime = System.currentTimeMillis();
 
         info("processing " + project.getId());
@@ -204,6 +237,32 @@ public abstract class AgentMojo extends WhitesourceMojo {
         }
 
         // dependencies
+        if (resolveInHouseDependencies) {
+            // TODO get in house rules
+            try {
+                info("Getting in-house rules...");
+                GetInHouseRulesResult inHouseRulesResult = service.getInHouseRules(orgToken);
+                try {
+                    projectInfo.getDependencies().addAll(collectDependencies(project, inHouseRulesResult.getInHouseRules()));
+                } catch (DependencyGraphBuilderException e) {
+                    // TODO handle + log
+                    e.printStackTrace();
+                }
+            } catch (WssServiceException e) {
+                throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
+            }
+        } else {
+            projectInfo.getDependencies().addAll(collectDependencies(project));
+        }
+
+        info("Total processing time is " + (System.currentTimeMillis() - startTime) + " [msec]");
+
+        return projectInfo;
+    }
+
+    protected Collection<DependencyInfo> collectDependencies(MavenProject project) {
+        Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
+
         Map<Dependency, Artifact> lut = createLookupTable(project);
         for (Dependency dependency : project.getDependencies()) {
             if (ignoreTestScopeDependencies && Artifact.SCOPE_TEST.equals(dependency.getScope())) {
@@ -224,12 +283,77 @@ public abstract class AgentMojo extends WhitesourceMojo {
                 }
             }
 
-            projectInfo.getDependencies().add(dependencyInfo);
+            dependencyInfos.add(dependencyInfo);
         }
 
-        info("Total processing time is " + (System.currentTimeMillis() - startTime) + " [msec]");
+        return dependencyInfos;
+    }
 
-        return projectInfo;
+    protected Collection<DependencyInfo> collectDependencies(MavenProject project, Collection<InHouseRule> inHouseRules) throws DependencyGraphBuilderException {
+        Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
+
+        DependencyNode hierarchyRoot = dependencyGraphBuilder.buildDependencyGraph(project, null);
+        Map<Dependency, DependencyNode> lut = createLookupTable(project, hierarchyRoot);
+        for (Dependency dependency : project.getDependencies()) {
+            if (ignoreTestScopeDependencies && Artifact.SCOPE_TEST.equals(dependency.getScope())) {
+                continue; // exclude test scope dependencies from being sent to the server
+            }
+
+            DependencyInfo dependencyInfo = getDependencyInfo(dependency);
+
+            DependencyNode dependencyNode = lut.get(dependency);
+            Artifact artifact = dependencyNode.getArtifact();
+            if (artifact != null) {
+                File artifactFile = artifact.getFile();
+                if (artifactFile != null && artifactFile.exists()) {
+                    try {
+                        dependencyInfo.setSha1(ChecksumUtils.calculateSHA1(artifactFile));
+                    } catch (IOException e) {
+                        debug(Constants.ERROR_SHA1 + " for " + artifact.getId());
+                    }
+                }
+            }
+
+            // match in-house
+            boolean inHouse = false;
+            for (InHouseRule inHouseRule : inHouseRules) {
+                String groupId = dependency.getGroupId();
+                String artifactId = dependency.getArtifactId();
+
+                if (StringUtils.isNotBlank(inHouseRule.getNameRegex())) {
+                    if (inHouseRule.match(groupId) || inHouseRule.match(artifactId)) {
+                        inHouse = true;
+                        break;
+                    }
+                } else {
+                    if (inHouseRule.match(groupId, artifactId)) {
+                        inHouse = true;
+                        break;
+                    }
+                }
+            }
+
+            // collect children of internal dependencies
+            if (inHouse) {
+                dependencyInfo.setInHouse(true);
+                for (DependencyNode child : dependencyNode.getChildren()) {
+                    addNodeAsChild(dependencyInfo, child);
+                }
+            }
+
+            dependencyInfos.add(dependencyInfo);
+        }
+
+        return dependencyInfos;
+    }
+
+    private void addNodeAsChild(DependencyInfo dependencyInfo, DependencyNode dependencyNode) {
+        DependencyInfo childInfo = getDependencyInfo(dependencyNode.getArtifact());
+        dependencyInfo.getChildren().add(childInfo);
+
+        for (DependencyNode childNode : dependencyNode.getChildren()) {
+            addNodeAsChild(childInfo, childNode);
+        }
     }
 
     protected Coordinates extractCoordinates(MavenProject mavenProject) {
@@ -245,6 +369,21 @@ public abstract class AgentMojo extends WhitesourceMojo {
             for (Artifact dependencyArtifact : project.getDependencyArtifacts()) {
                 if (match(dependency, dependencyArtifact)) {
                     lut.put(dependency, dependencyArtifact);
+                }
+            }
+        }
+
+        return lut;
+    }
+
+    protected Map<Dependency,DependencyNode> createLookupTable(MavenProject project, DependencyNode hierarchyRoot) {
+        Map<Dependency, DependencyNode> lut = new HashMap<Dependency, DependencyNode>();
+
+        for (Dependency dependency : project.getDependencies()) {
+            for (DependencyNode dependencyNode : hierarchyRoot.getChildren()) {
+                Artifact dependencyArtifact = dependencyNode.getArtifact();
+                if (match(dependency, dependencyArtifact)) {
+                    lut.put(dependency, dependencyNode);
                 }
             }
         }
@@ -274,10 +413,11 @@ public abstract class AgentMojo extends WhitesourceMojo {
                 dependency.getVersion().equals(artifact.getVersion());
 
         if (match) {
+            String artifactClassifier = artifact.getClassifier();
             if (dependency.getClassifier() == null) {
-                match = artifact.getClassifier() == null;
+                match = artifactClassifier == null || StringUtils.isBlank(artifactClassifier);
             } else {
-                match = dependency.getClassifier().equals(artifact.getClassifier());
+                match = dependency.getClassifier().equals(artifactClassifier);
             }
         }
 
@@ -293,7 +433,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
         return match;
     }
 
-    protected Collection<AgentProjectInfo> extractProjectInfos() {
+    protected Collection<AgentProjectInfo> extractProjectInfos() throws MojoExecutionException {
         Collection<AgentProjectInfo> projectInfos = new ArrayList<AgentProjectInfo>();
 
         for (MavenProject project : reactorProjects) {
