@@ -29,6 +29,10 @@ import java.util.*;
  */
 public abstract class AgentMojo extends WhitesourceMojo {
 
+    /* --- Static members --- */
+
+    public static final String REGEX_MATCH_ALL = "*";
+
     /* --- Members --- */
 
     /**
@@ -158,6 +162,8 @@ public abstract class AgentMojo extends WhitesourceMojo {
     @Component( hint = "default" )
     private DependencyGraphBuilder dependencyGraphBuilder;
 
+    private Collection<InHouseRule> inHouseRules;
+
     /* --- Protected methods --- */
 
     protected DependencyInfo getDependencyInfo(Dependency dependency) {
@@ -237,21 +243,27 @@ public abstract class AgentMojo extends WhitesourceMojo {
         }
 
         // dependencies
+        boolean collectDirectDependencies = !resolveInHouseDependencies;
         if (resolveInHouseDependencies) {
-            // TODO get in house rules
             try {
                 info("Getting in-house rules...");
                 GetInHouseRulesResult inHouseRulesResult = service.getInHouseRules(orgToken);
-                try {
-                    projectInfo.getDependencies().addAll(collectDependencies(project, inHouseRulesResult.getInHouseRules()));
-                } catch (DependencyGraphBuilderException e) {
-                    // TODO handle + log
-                    e.printStackTrace();
+                inHouseRules = inHouseRulesResult.getInHouseRules();
+                if (inHouseRules.isEmpty()) {
+                    collectDirectDependencies = true;
+                } else {
+                   projectInfo.getDependencies().addAll(collectDependenciesResolveInHouse(project));
                 }
             } catch (WssServiceException e) {
                 throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
+            } catch (DependencyGraphBuilderException e) {
+                collectDirectDependencies = true;
+                projectInfo.getDependencies().clear();
+                debug("failed to collect dependencies recursively, fallback to direct dependencies only");
             }
-        } else {
+        }
+
+        if (collectDirectDependencies) {
             projectInfo.getDependencies().addAll(collectDependencies(project));
         }
 
@@ -289,7 +301,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
         return dependencyInfos;
     }
 
-    protected Collection<DependencyInfo> collectDependencies(MavenProject project, Collection<InHouseRule> inHouseRules) throws DependencyGraphBuilderException {
+    protected Collection<DependencyInfo> collectDependenciesResolveInHouse(MavenProject project) throws DependencyGraphBuilderException {
         Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
 
         DependencyNode hierarchyRoot = dependencyGraphBuilder.buildDependencyGraph(project, null);
@@ -300,6 +312,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
             }
 
             DependencyInfo dependencyInfo = getDependencyInfo(dependency);
+            dependencyInfos.add(dependencyInfo);
 
             DependencyNode dependencyNode = lut.get(dependency);
             Artifact artifact = dependencyNode.getArtifact();
@@ -314,46 +327,54 @@ public abstract class AgentMojo extends WhitesourceMojo {
                 }
             }
 
-            // match in-house
-            boolean inHouse = false;
+            // resolve in-house dependencies, send them all as flat list (direct dependencies)
+            if (isInHouse(dependencyInfo)) {
+                for (DependencyNode child : dependencyNode.getChildren()) {
+                    dependencyInfos.addAll(getChildrenAsFlatList(child));
+                }
+            }
+        }
+
+        return dependencyInfos;
+    }
+
+    private boolean isInHouse(DependencyInfo dependency) {
+        boolean inHouse = false;
+        if (inHouseRules != null) {
             for (InHouseRule inHouseRule : inHouseRules) {
                 String groupId = dependency.getGroupId();
                 String artifactId = dependency.getArtifactId();
 
                 if (StringUtils.isNotBlank(inHouseRule.getNameRegex())) {
                     if (inHouseRule.match(groupId) || inHouseRule.match(artifactId)) {
+                        debug(dependency.toString() + " matches in-house rule " + inHouseRule.toString());
                         inHouse = true;
                         break;
                     }
                 } else {
                     if (inHouseRule.match(groupId, artifactId)) {
+                        debug(dependency.toString() + " matches in-house rule " + inHouseRule.toString());
                         inHouse = true;
                         break;
                     }
                 }
             }
+        }
+        return inHouse;
+    }
 
-            // collect children of internal dependencies
-            if (inHouse) {
-                dependencyInfo.setInHouse(true);
-                for (DependencyNode child : dependencyNode.getChildren()) {
-                    addNodeAsChild(dependencyInfo, child);
-                }
-            }
+    private Collection<DependencyInfo> getChildrenAsFlatList(DependencyNode dependencyNode) {
+        Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
 
-            dependencyInfos.add(dependencyInfo);
+        DependencyInfo childInfo = getDependencyInfo(dependencyNode.getArtifact());
+        childInfo.setExclusions(Arrays.asList(new ExclusionInfo(REGEX_MATCH_ALL, REGEX_MATCH_ALL)));
+        dependencyInfos.add(childInfo);
+
+        for (DependencyNode childNode : dependencyNode.getChildren()) {
+            dependencyInfos.addAll(getChildrenAsFlatList(childNode));
         }
 
         return dependencyInfos;
-    }
-
-    private void addNodeAsChild(DependencyInfo dependencyInfo, DependencyNode dependencyNode) {
-        DependencyInfo childInfo = getDependencyInfo(dependencyNode.getArtifact());
-        dependencyInfo.getChildren().add(childInfo);
-
-        for (DependencyNode childNode : dependencyNode.getChildren()) {
-            addNodeAsChild(childInfo, childNode);
-        }
     }
 
     protected Coordinates extractCoordinates(MavenProject mavenProject) {
