@@ -1,3 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<pmd version="4.3" timestamp="2014-06-18T18:21:12.136">
+<pmd version="4.3" timestamp="2014-06-18T18:29:13.604">
+<file name="/var/lib/jenkins/workspace/release-site-maven-plugin/src/main/java/org/whitesource/maven/AgentMojo.java">
+<violation beginline="328" endline="330" begincolumn="17" endcolumn="17" rule="CollapsibleIfStatements" ruleset="Basic Rules" package="org.whitesource.maven" class="AgentMojo" method="collectDependenciesResolveInHouse" externalInfoUrl="http://pmd.sourceforge.net/rules/basic.html#CollapsibleIfStatements" priority="3">
+These nested if statements could be combined
+</violation>
+</file>
 </pmd>
