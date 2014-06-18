@@ -152,6 +152,8 @@ public abstract class AgentMojo extends WhitesourceMojo {
             required = false)
     protected boolean reportAsJson;
 
+    /* --- Resolve in-house dependencies members --- */
+
     /**
      * Optional. Set to true to recursively resolve and send transitive dependencies of internal dependencies to WhiteSource.
      * Should only be set to 'true' if any internal (in-house) dependencies are used in the project.
@@ -159,20 +161,6 @@ public abstract class AgentMojo extends WhitesourceMojo {
     @Parameter(defaultValue = "false",
             required = false)
     protected boolean resolveInHouseDependencies;
-
-    /**
-     * The dependency tree builder to use.
-     */
-    @Component( hint = "default" )
-    private DependencyGraphBuilder dependencyGraphBuilder;
-
-    private Collection<InHouseRule> inHouseRules;
-
-    @Component
-    private ArtifactFactory artifactFactory;
-
-    @Component
-    private MavenProjectBuilder mavenProjectBuilder;
 
     /**
      * List of Remote Repositories used by the resolver
@@ -184,7 +172,30 @@ public abstract class AgentMojo extends WhitesourceMojo {
      * Location of the local repository.
      */
     @Parameter( defaultValue = "${localRepository}", readonly = true, required = true )
-    private ArtifactRepository local;
+    protected ArtifactRepository local;
+
+    /**
+     * The dependency tree builder to use.
+     */
+    @Component( hint = "default" )
+    protected DependencyGraphBuilder dependencyGraphBuilder;
+
+    /**
+     * The artifact factory to use for creating an artifact for pom lookup of in-house libraries.
+     */
+    @Component
+    protected ArtifactFactory artifactFactory;
+
+    /**
+     * The Maven project builder to use for resolving in-house dependencies.
+     */
+    @Component
+    protected MavenProjectBuilder mavenProjectBuilder;
+
+    /**
+     * In house rules received from WhiteSource server.
+     */
+    protected Collection<InHouseRule> inHouseRules;
 
     /* --- Protected methods --- */
 
@@ -289,14 +300,77 @@ public abstract class AgentMojo extends WhitesourceMojo {
             }
 
             DependencyInfo dependencyInfo = getDependencyInfo(dependency);
-            trySetSha1(dependencyInfo, lut.get(dependency));
+            extractSha1(dependencyInfo, lut.get(dependency));
             dependencyInfos.add(dependencyInfo);
         }
 
         return dependencyInfos;
     }
 
-    private void trySetSha1(DependencyInfo dependencyInfo, Artifact artifact) {
+    protected Collection<DependencyInfo> collectDependenciesResolveInHouse(MavenProject project) throws DependencyGraphBuilderException {
+        // build the dependency graph of the project in order to resolve all transitive dependencies
+        DependencyNode hierarchyRoot = dependencyGraphBuilder.buildDependencyGraph(project, null);
+        Map<Dependency, DependencyNode> lut = createLookupTable(project, hierarchyRoot);
+
+        Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
+        for (Dependency dependency : project.getDependencies()) {
+            if (ignoreTestScopeDependencies && Artifact.SCOPE_TEST.equals(dependency.getScope())) {
+                continue; // exclude test scope dependencies from being sent to the server
+            }
+
+            DependencyNode dependencyNode = lut.get(dependency);
+            DependencyInfo dependencyInfo = getDependencyInfo(dependency);
+            extractSha1(dependencyInfo, dependencyNode.getArtifact());
+            dependencyInfos.add(dependencyInfo);
+
+            // resolve in-house dependencies, send them all as flat list (direct dependencies)
+            if (matchesInHouseRule(dependencyInfo)) {
+                dependencyInfos.addAll(resolveInHouseDependencies(dependencyNode));
+            }
+        }
+
+        return dependencyInfos;
+    }
+
+    protected Collection<DependencyInfo> resolveInHouseDependencies(DependencyNode root) {
+        Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
+
+        // build maven project from artifact to extract dependencies
+        List<Dependency> dependencies = new ArrayList<Dependency>();
+        Artifact artifact = root.getArtifact();
+        Artifact pomArtifact = artifactFactory.createArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getScope(), POM);
+        try {
+            MavenProject mavenProject = mavenProjectBuilder.buildFromRepository(pomArtifact, remoteRepos, local);
+            if (mavenProject != null) {
+                dependencies.addAll(mavenProject.getDependencies());
+            }
+        } catch (ProjectBuildingException e) {
+            debug("error building maven project for " + artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion() + " from repository");
+        }
+
+        // only collect resolved dependencies (result of the dependencyGraphBuilder)
+        for (DependencyNode childNode : root.getChildren()) {
+            Artifact childArtifact = childNode.getArtifact();
+            for (Dependency dependency : dependencies) {
+                if (match(dependency, childArtifact)) {
+                    DependencyInfo dependencyInfo = getDependencyInfo(dependency);
+                    dependencyInfos.add(dependencyInfo);
+                    extractSha1(dependencyInfo, childArtifact);
+
+                    // check in house
+                    if (matchesInHouseRule(dependencyInfo)) {
+                        // recursively collect all dependencies of in-house libraries
+                        dependencyInfos.addAll(resolveInHouseDependencies(childNode));
+                    }
+                    break;
+                }
+            }
+        }
+
+        return dependencyInfos;
+    }
+
+    protected void extractSha1(DependencyInfo dependencyInfo, Artifact artifact) {
         if (artifact != null) {
             File artifactFile = artifact.getFile();
             if (artifactFile != null && artifactFile.exists()) {
@@ -309,69 +383,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
         }
     }
 
-    protected Collection<DependencyInfo> collectDependenciesResolveInHouse(MavenProject project) throws DependencyGraphBuilderException {
-        Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
-
-        DependencyNode hierarchyRoot = dependencyGraphBuilder.buildDependencyGraph(project, null);
-        Map<Dependency, DependencyNode> lut = createLookupTable(project, hierarchyRoot);
-        for (Dependency dependency : project.getDependencies()) {
-            if (ignoreTestScopeDependencies && Artifact.SCOPE_TEST.equals(dependency.getScope())) {
-                continue; // exclude test scope dependencies from being sent to the server
-            }
-
-            DependencyInfo dependencyInfo = getDependencyInfo(dependency);
-            dependencyInfos.add(dependencyInfo);
-
-            // try to set sha-1
-            DependencyNode dependencyNode = lut.get(dependency);
-            trySetSha1(dependencyInfo, dependencyNode.getArtifact());
-
-            // resolve in-house dependencies, send them all as flat list (direct dependencies)
-            if (isInHouse(dependencyInfo)) {
-                dependencyInfos.addAll(resolveInHouseDependencies(dependencyNode));
-            }
-        }
-
-        return dependencyInfos;
-    }
-
-    private Collection<DependencyInfo> resolveInHouseDependencies(DependencyNode dependencyNode) {
-        Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
-        List<Dependency> dependencies = new ArrayList<Dependency>();
-
-        // get maven project
-        Artifact artifact = dependencyNode.getArtifact();
-        Artifact pomArtifact = artifactFactory.createArtifact(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getScope(), POM);
-        try {
-            MavenProject mavenProject = mavenProjectBuilder.buildFromRepository(pomArtifact, remoteRepos, local);
-            dependencies.addAll(mavenProject.getDependencies());
-        } catch (ProjectBuildingException e) {
-            debug("error building maven project for " + artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion() + " from repository");
-        }
-
-        // get only resolved children of dependency (result of the dependencyGraphBuilder)
-        for (DependencyNode childNode : dependencyNode.getChildren()) {
-            Artifact childArtifact = childNode.getArtifact();
-            for (Dependency dependency : dependencies) {
-                if (match(dependency, childArtifact)) {
-                    DependencyInfo dependencyInfo = getDependencyInfo(dependency);
-                    dependencyInfos.add(dependencyInfo);
-                    trySetSha1(dependencyInfo, childArtifact);
-
-                    // check in house
-                    if (isInHouse(dependencyInfo)) {
-                        // recursively collect all in-house dependencies
-                        dependencyInfos.addAll(resolveInHouseDependencies(childNode));
-                    }
-                    break;
-                }
-            }
-        }
-
-        return dependencyInfos;
-    }
-
-    private boolean isInHouse(DependencyInfo dependency) {
+    protected boolean matchesInHouseRule(DependencyInfo dependency) {
         boolean inHouse = false;
         if (inHouseRules != null) {
             for (InHouseRule inHouseRule : inHouseRules) {
