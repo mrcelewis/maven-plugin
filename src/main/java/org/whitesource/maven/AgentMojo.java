@@ -310,22 +310,24 @@ public abstract class AgentMojo extends WhitesourceMojo {
     protected Collection<DependencyInfo> collectDependenciesResolveInHouse(MavenProject project) throws DependencyGraphBuilderException {
         // build the dependency graph of the project in order to resolve all transitive dependencies
         DependencyNode hierarchyRoot = dependencyGraphBuilder.buildDependencyGraph(project, null);
-        Map<Dependency, DependencyNode> lut = createLookupTable(project, hierarchyRoot);
+        Map<Dependency, DependencyNode> dependencyNodeMap = createLookupTable(project, hierarchyRoot);
+        Map<Dependency, Artifact> artifactMap = createLookupTable(project);
 
         Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
         for (Dependency dependency : project.getDependencies()) {
             if (ignoreTestScopeDependencies && Artifact.SCOPE_TEST.equals(dependency.getScope())) {
                 continue; // exclude test scope dependencies from being sent to the server
             }
-
-            DependencyNode dependencyNode = lut.get(dependency);
             DependencyInfo dependencyInfo = getDependencyInfo(dependency);
-            extractSha1(dependencyInfo, dependencyNode.getArtifact());
             dependencyInfos.add(dependencyInfo);
+            extractSha1(dependencyInfo, artifactMap.get(dependency));
 
-            // resolve in-house dependencies, send them all as flat list (direct dependencies)
-            if (matchesInHouseRule(dependencyInfo)) {
-                dependencyInfos.addAll(resolveInHouseDependencies(dependencyNode));
+            DependencyNode dependencyNode = dependencyNodeMap.get(dependency);
+            if (dependencyNode != null) {
+                // resolve in-house dependencies, send them all as flat list (direct dependencies)
+                if (matchesInHouseRule(dependencyInfo)) {
+                    dependencyInfos.addAll(resolveInHouseDependencies(dependencyNode));
+                }
             }
         }
 
