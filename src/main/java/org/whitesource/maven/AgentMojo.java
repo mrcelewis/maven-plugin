@@ -323,7 +323,9 @@ public abstract class AgentMojo extends WhitesourceMojo {
             extractSha1(dependencyInfo, artifactMap.get(dependency));
 
             DependencyNode dependencyNode = dependencyNodeMap.get(dependency);
-            if (dependencyNode != null) {
+            if (dependencyNode == null) {
+                debug(dependency + " is not mapped to any dependency node");
+            } else {
                 // resolve in-house dependencies, send them all as flat list (direct dependencies)
                 if (matchesInHouseRule(dependencyInfo)) {
                     dependencyInfos.addAll(resolveInHouseDependencies(dependencyNode));
