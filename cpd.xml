@@ -2,7 +2,7 @@
 <pmd-cpd>
 <duplication lines="25" tokens="110">
 <file line="72" path="/var/lib/jenkins/workspace/release-site-maven-plugin/src/main/java/org/whitesource/maven/CheckPoliciesMojo.java"/>
-<file line="83" path="/var/lib/jenkins/workspace/release-site-maven-plugin/src/main/java/org/whitesource/maven/UpdateMojo.java"/>
+<file line="80" path="/var/lib/jenkins/workspace/release-site-maven-plugin/src/main/java/org/whitesource/maven/UpdateMojo.java"/>
 <codefragment>
 <![CDATA[
             sendCheckPolicies(projectInfos);
