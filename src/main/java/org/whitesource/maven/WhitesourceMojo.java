@@ -24,6 +24,8 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectDependenciesResolver;
+import org.sonatype.aether.RepositorySystemSession;
 import org.sonatype.aether.repository.Authentication;
 import org.sonatype.aether.repository.Proxy;
 import org.sonatype.aether.repository.RemoteRepository;
@@ -62,6 +64,18 @@ public abstract class WhitesourceMojo extends AbstractMojo {
 
     @Component
     protected MavenProject mavenProject;
+
+    /**
+     * The project dependency resolver to use.
+     */
+    @Component( hint = "default" )
+    protected ProjectDependenciesResolver projectDependenciesResolver;
+
+    /**
+     * The current repository/network configuration of Maven.
+     */
+    @Parameter( defaultValue = "${repositorySystemSession}", readonly = true, required = true )
+    protected RepositorySystemSession repoSession;
 
     protected WhitesourceService service;
 

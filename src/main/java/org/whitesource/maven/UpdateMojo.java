@@ -50,10 +50,7 @@ public class UpdateMojo extends AgentMojo {
     /**
      * Optional. Set to true to check policies.
      */
-    @Parameter( alias = "checkPolicies",
-            property = Constants.CHECK_POLICIES,
-            required = false,
-            defaultValue = "false")
+    @Parameter( alias = "checkPolicies", property = Constants.CHECK_POLICIES, required = false, defaultValue = "false")
     private boolean checkPolicies;
 
     /* --- Constructors --- */
