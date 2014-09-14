@@ -20,6 +20,7 @@ import org.whitesource.agent.report.PolicyCheckReport;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.*;
 
 /**
@@ -278,7 +279,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
             dependencyInfos.add(info);
         }
 
-        debug("*** printing graph result ***");
+        debug(MessageFormat.format("*** Printing Graph Result for {0} ***", project.getName()));
         for (DependencyInfo dependencyInfo : dependencyInfos) {
             debugPrintChildren(dependencyInfo, "");
         }

@@ -32,6 +32,8 @@ import org.sonatype.aether.repository.RemoteRepository;
 import org.whitesource.agent.client.ClientConstants;
 import org.whitesource.agent.client.WhitesourceService;
 
+import java.text.MessageFormat;
+
 //import org.eclipse.aether.RepositorySystemSession;
 //import org.eclipse.aether.repository.Authentication;
 //import org.eclipse.aether.repository.AuthenticationContext;
@@ -114,13 +116,21 @@ public abstract class WhitesourceMojo extends AbstractMojo {
     protected void createService() {
         String serviceUrl = session.getSystemProperties().getProperty(
                 ClientConstants.SERVICE_URL_KEYWORD, ClientConstants.DEFAULT_SERVICE_URL);
+        info("Service URL is " + serviceUrl);
 
         service = new WhitesourceService(Constants.AGENT_TYPE, Constants.AGENT_VERSION, serviceUrl);
+        if (service == null) {
+            info("Failed to initiate WhiteSource Service");
+        } else {
+            info("Initiated WhiteSource Service");
+        }
 
         // get proxy configuration from session
         RemoteRepository dummyRepo = new RemoteRepository().setUrl(serviceUrl);
         final Proxy proxy = session.getRepositorySession().getProxySelector().getProxy(dummyRepo);
-        if (proxy != null) {
+        if (proxy == null) {
+            info("No proxy settings");
+        } else {
             String username = null;
             String password = null;
             final Authentication auth = proxy.getAuthentication();
@@ -128,7 +138,12 @@ public abstract class WhitesourceMojo extends AbstractMojo {
                 username = auth.getUsername();
                 password = auth.getPassword();
             }
-            service.getClient().setProxy(proxy.getHost(), proxy.getPort(), username, password);
+
+            String host = proxy.getHost();
+            int port = proxy.getPort();
+            service.getClient().setProxy(host, port, username, password);
+
+            info(MessageFormat.format("Proxy settings - host:{0}, port:{1}, username:{2}, password:{3}", host, port, username, password));
         }
 //        //TODO: uncomment the code below and replace with the above when we need to support maven 3.1.1 (which migrated from Sonatype Aether to Eclipse Aether)
 //        RemoteRepository.Builder remoteRepositoryBuilder = new RemoteRepository.Builder(null, null, serviceUrl);
