@@ -9,7 +9,7 @@
 
     <groupId>org.whitesource</groupId>
     <artifactId>whitesource-maven-plugin</artifactId>
-    <version>2.1.1-SNAPSHOT</version>
+    <version>2.1.1</version>
     <packaging>maven-plugin</packaging>
 
     <name>White Source maven plugin</name>
@@ -29,7 +29,8 @@
         <connection>scm:git:git@github.com:whitesource/maven-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:whitesource/maven-plugin.git</developerConnection>
         <url>git@github.com:whitesource/maven-plugin.git</url>
-    </scm>
+      <tag>release-tag-2.1.1</tag>
+  </scm>
     <issueManagement>
         <url>https://github.com/whitesource/maven-plugin/issues</url>
         <system>GitHub Issues</system>
