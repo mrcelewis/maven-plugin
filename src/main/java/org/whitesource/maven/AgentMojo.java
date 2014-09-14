@@ -34,6 +34,8 @@ public abstract class AgentMojo extends WhitesourceMojo {
 
     public static final String POM = "pom";
     public static final String TYPE = "type";
+    public static final String SCOPE_TEST = "test";
+    public static final String SCOPE_PROVIDED = "provided";
 
     /* --- Members --- */
 
@@ -106,6 +108,12 @@ public abstract class AgentMojo extends WhitesourceMojo {
     protected String[] excludes;
 
     /**
+     * Optional. Scopes to be ignored (default "test" and "provided").
+     */
+    @Parameter(alias = "ignoredScopes", property = Constants.SCOPE, required = false)
+    protected String[] ignoredScopes;
+
+    /**
      * Optional. Set to true to ignore this maven modules of type pom.
      */
     @Parameter(alias = "ignorePomModules", property = Constants.IGNORE_POM_MODULES, required = false, defaultValue = "true")
@@ -113,6 +121,17 @@ public abstract class AgentMojo extends WhitesourceMojo {
 
     @Parameter(defaultValue = "${reactorProjects}", required = true, readonly = true)
     protected Collection<MavenProject> reactorProjects;
+
+    /* --- Constructors --- */
+
+    protected AgentMojo() {
+        // set default values
+        if (ignoredScopes == null) {
+            ignoredScopes = new String[2];
+            ignoredScopes[0] = SCOPE_TEST;
+            ignoredScopes[1] = SCOPE_PROVIDED;
+        }
+    }
 
     /* --- Protected methods --- */
 
@@ -275,8 +294,12 @@ public abstract class AgentMojo extends WhitesourceMojo {
 
         Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
         for (org.sonatype.aether.graph.DependencyNode dependencyNode : rootNode.getChildren()) {
-            DependencyInfo info = getDependencyInfo(dependencyNode);
-            dependencyInfos.add(info);
+            // don't add ignored scope
+            String scope = dependencyNode.getDependency().getScope();
+            if (StringUtils.isBlank(scope) || !shouldIgnore(scope)) {
+                DependencyInfo info = getDependencyInfo(dependencyNode);
+                dependencyInfos.add(info);
+            }
         }
 
         debug(MessageFormat.format("*** Printing Graph Result for {0} ***", project.getName()));
@@ -399,6 +422,17 @@ public abstract class AgentMojo extends WhitesourceMojo {
         } catch (IOException e) {
             throw new MojoExecutionException("Error generating report: " + e.getMessage(), e);
         }
+    }
+
+    private boolean shouldIgnore(String scope) {
+        boolean ignore = false;
+        for (String ignoredScope : ignoredScopes) {
+            if (ignoredScope.equals(scope)) {
+                ignore = true;
+                break;
+            }
+        }
+        return ignore;
     }
 
 }

@@ -40,6 +40,7 @@ public final class Constants {
     public static final String IGNORE = PLUGIN_PREFIX + "ignore";
     public static final String INCLUDES = PLUGIN_PREFIX + "includes";
     public static final String EXCLUDES = PLUGIN_PREFIX + "excludes";
+    public static final String SCOPE = PLUGIN_PREFIX + "scope";
     public static final String IGNORE_POM_MODULES = PLUGIN_PREFIX + "ignorePomModules";
 
 	/* --- Errors --- */
