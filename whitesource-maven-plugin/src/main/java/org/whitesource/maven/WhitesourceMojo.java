@@ -25,20 +25,12 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.repository.Authentication;
-import org.sonatype.aether.repository.Proxy;
-import org.sonatype.aether.repository.RemoteRepository;
 import org.whitesource.agent.client.ClientConstants;
 import org.whitesource.agent.client.WhitesourceService;
+import org.whitesource.maven.utils.proxy.ProxySettings;
+import org.whitesource.maven.utils.proxy.ProxySettingsProvider;
+import org.whitesource.maven.utils.proxy.ProxySettingsProviderFactory;
 
-import java.text.MessageFormat;
-
-//import org.eclipse.aether.RepositorySystemSession;
-//import org.eclipse.aether.repository.Authentication;
-//import org.eclipse.aether.repository.AuthenticationContext;
-//import org.eclipse.aether.repository.Proxy;
-//import org.eclipse.aether.repository.RemoteRepository;
 
 /**
  * Concrete implementation holding common functionality to all goals in this plugin.
@@ -72,12 +64,6 @@ public abstract class WhitesourceMojo extends AbstractMojo {
      */
     @Component( hint = "default" )
     protected ProjectDependenciesResolver projectDependenciesResolver;
-
-    /**
-     * The current repository/network configuration of Maven.
-     */
-    @Parameter( defaultValue = "${repositorySystemSession}", readonly = true, required = true )
-    protected RepositorySystemSession repoSession;
 
     protected WhitesourceService service;
 
@@ -126,48 +112,17 @@ public abstract class WhitesourceMojo extends AbstractMojo {
         }
 
         // get proxy configuration from session
-        RemoteRepository dummyRepo = new RemoteRepository().setUrl(serviceUrl);
-        final Proxy proxy = session.getRepositorySession().getProxySelector().getProxy(dummyRepo);
-        if (proxy == null) {
-            info("No proxy settings");
+        ProxySettingsProvider proxySettingsProvider = ProxySettingsProviderFactory.getProxySettingsProviderForUrl(serviceUrl, session);
+        if (proxySettingsProvider.isProxyConfigured()) {
+            ProxySettings proxySettings = proxySettingsProvider.getProxySettings();
+            service.getClient().setProxy(
+                    proxySettings.getHostname(),
+                    proxySettings.getPort(),
+                    proxySettings.getUsername(),
+                    proxySettings.getPassword());
         } else {
-            String username = null;
-            String password = null;
-            final Authentication auth = proxy.getAuthentication();
-            if (auth != null) {
-                username = auth.getUsername();
-                password = auth.getPassword();
-            }
-
-            String host = proxy.getHost();
-            int port = proxy.getPort();
-            service.getClient().setProxy(host, port, username, password);
-
-            info(MessageFormat.format("Proxy settings - host:{0}, port:{1}, username:{2}, password:{3}", host, port, username, password));
+            info("No proxy settings");
         }
-//        //TODO: uncomment the code below and replace with the above when we need to support maven 3.1.1 (which migrated from Sonatype Aether to Eclipse Aether)
-//        RemoteRepository.Builder remoteRepositoryBuilder = new RemoteRepository.Builder(null, null, serviceUrl);
-//        RemoteRepository dummyRepo = remoteRepositoryBuilder.build();
-//        RepositorySystemSession repositorySystemSession = session.getRepositorySession();
-//        final Proxy proxy = repositorySystemSession.getProxySelector().getProxy(dummyRepo);
-//        if (proxy != null) {
-//            String username = null;
-//            String password = null;
-//            final Authentication auth = proxy.getAuthentication();
-//            if (auth != null) {
-//                dummyRepo = remoteRepositoryBuilder.setAuthentication(auth).build();
-//                AuthenticationContext authenticationContext = AuthenticationContext.forRepository( repositorySystemSession, dummyRepo );
-//                try {
-//                    auth.fill(authenticationContext, null, null);
-//                    username = authenticationContext.get(AuthenticationContext.USERNAME, String.class);
-//                    password = authenticationContext.get(AuthenticationContext.PASSWORD, String.class);
-//                }
-//                finally {
-//                    AuthenticationContext.close(authenticationContext);
-//                }
-//            }
-//            service.getClient().setProxy(proxy.getHost(), proxy.getPort(), username, password);
-//        }
     }
 
     protected void handleError(Exception error) throws MojoFailureException {

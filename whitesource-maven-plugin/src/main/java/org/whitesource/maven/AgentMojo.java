@@ -6,9 +6,7 @@ import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.DefaultDependencyResolutionRequest;
 import org.apache.maven.project.DependencyResolutionException;
-import org.apache.maven.project.DependencyResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.whitesource.agent.api.ChecksumUtils;
 import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
@@ -17,6 +15,7 @@ import org.whitesource.agent.api.model.Coordinates;
 import org.whitesource.agent.api.model.DependencyInfo;
 import org.whitesource.agent.api.model.ExclusionInfo;
 import org.whitesource.agent.report.PolicyCheckReport;
+import org.whitesource.maven.utils.dependencies.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -157,12 +156,12 @@ public abstract class AgentMojo extends WhitesourceMojo {
         return info;
     }
 
-    private DependencyInfo getDependencyInfo(org.sonatype.aether.graph.DependencyNode dependencyNode) {
+    private DependencyInfo getDependencyInfo(AetherDependencyNode dependencyNode) {
         DependencyInfo info = new DependencyInfo();
 
         // dependency data
-        org.sonatype.aether.graph.Dependency dependency = dependencyNode.getDependency();
-        org.sonatype.aether.artifact.Artifact artifact = dependency.getArtifact();
+        AetherDependency dependency = dependencyNode.getDependency();
+        AetherArtifact artifact = dependency.getArtifact();
         info.setGroupId(artifact.getGroupId());
         info.setArtifactId(artifact.getArtifactId());
         info.setVersion(artifact.getVersion());
@@ -183,12 +182,12 @@ public abstract class AgentMojo extends WhitesourceMojo {
         }
 
         // exclusions
-        for (org.sonatype.aether.graph.Exclusion exclusion : dependency.getExclusions()) {
+        for (AetherExclusion exclusion : dependency.getExclusions()) {
             info.getExclusions().add(new ExclusionInfo(exclusion.getArtifactId(), exclusion.getGroupId()));
         }
 
         // recursively collect children
-        for (org.sonatype.aether.graph.DependencyNode child : dependencyNode.getChildren()) {
+        for (AetherDependencyNode child : dependencyNode.getChildren()) {
             info.getChildren().add(getDependencyInfo(child));
         }
 
@@ -288,12 +287,9 @@ public abstract class AgentMojo extends WhitesourceMojo {
      * @throws DependencyResolutionException Exception thrown if dependency resolution fails.
      */
     protected Collection<DependencyInfo> collectDependencyStructure(MavenProject project) throws DependencyResolutionException {
-        DependencyResolutionResult resolutionResult = projectDependenciesResolver.resolve(
-                new DefaultDependencyResolutionRequest(project, repoSession));
-        org.sonatype.aether.graph.DependencyNode rootNode = resolutionResult.getDependencyGraph();
-
+        AetherDependencyNode rootNode = DependencyGraphFactory.getAetherDependencyGraphRootNode(project, projectDependenciesResolver, session);
         Collection<DependencyInfo> dependencyInfos = new ArrayList<DependencyInfo>();
-        for (org.sonatype.aether.graph.DependencyNode dependencyNode : rootNode.getChildren()) {
+        for (AetherDependencyNode dependencyNode : rootNode.getChildren()) {
             // don't add ignored scope
             String scope = dependencyNode.getDependency().getScope();
             if (StringUtils.isBlank(scope) || !shouldIgnore(scope)) {
