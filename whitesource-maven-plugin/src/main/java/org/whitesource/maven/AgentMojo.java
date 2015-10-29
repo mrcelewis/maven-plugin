@@ -118,6 +118,19 @@ public abstract class AgentMojo extends WhitesourceMojo {
     @Parameter(alias = "ignorePomModules", property = Constants.IGNORE_POM_MODULES, required = false, defaultValue = "true")
     protected boolean ignorePomModules;
 
+    /**
+     * Optional. Set to true to to combine all pom modules into a single project with a dependency flat list (no hierarchy).
+     */
+    @Parameter(alias = "combinePomModules", property = Constants.COMBINE_POM_MODULES, required = false, defaultValue = "false")
+    protected boolean combinePomModules;
+
+    /**
+     * Optional. Name of the White Source project to update when using parameter combinePomModules = true.
+     * If omitted, default naming convention will apply (artifactId of the parent pom).
+     */
+    @Parameter(alias = "projectName", property = Constants.PROJECT_NAME, required = false)
+    protected String projectName;
+
     @Parameter(defaultValue = "${reactorProjects}", required = true, readonly = true)
     protected Collection<MavenProject> reactorProjects;
 
@@ -388,7 +401,46 @@ public abstract class AgentMojo extends WhitesourceMojo {
 
         debugProjectInfos(projectInfos);
 
+        // combine all pom modules into a single project
+        if (combinePomModules) {
+            // collect dependencies as flat list
+            Set<DependencyInfo> flatDependencies = new HashSet<DependencyInfo>();
+            for (AgentProjectInfo projectInfo : projectInfos) {
+                for (DependencyInfo dependency : projectInfo.getDependencies()) {
+                    flatDependencies.add(dependency);
+                    flatDependencies.addAll(extractChildren(dependency));
+                }
+            }
+
+            // clear all projects
+            projectInfos.clear();
+
+            // create combined project
+            AgentProjectInfo combinedProject = new AgentProjectInfo();
+            combinedProject.setCoordinates(extractCoordinates(mavenProject));
+            combinedProject.setProjectToken(projectToken);
+            combinedProject.getDependencies().addAll(flatDependencies);
+            // override artifact id with project name
+            if (StringUtils.isNotBlank(projectName)) {
+                combinedProject.getCoordinates().setArtifactId(projectName);
+            }
+            projectInfos.add(combinedProject);
+        }
+
         return projectInfos;
+    }
+
+    private Collection<DependencyInfo> extractChildren(DependencyInfo dependency) {
+        Collection<DependencyInfo> children = new ArrayList<DependencyInfo>();
+        Iterator<DependencyInfo> iterator = dependency.getChildren().iterator();
+        while (iterator.hasNext()) {
+            DependencyInfo child = iterator.next();
+            children.add(child);
+            children.addAll(extractChildren(child));
+            // flatten dependencies
+            iterator.remove();
+        }
+        return children;
     }
 
     protected boolean shouldProcess(MavenProject project) {
