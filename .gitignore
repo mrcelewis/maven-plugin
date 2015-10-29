@@ -1,5 +1,7 @@
 
 /target
+whitesource-maven-utils/target/
+whitesource-maven-plugin/target/
 /.idea
 /.settings
 *.iml
