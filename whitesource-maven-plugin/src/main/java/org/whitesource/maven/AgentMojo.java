@@ -15,6 +15,7 @@ import org.whitesource.agent.api.model.Coordinates;
 import org.whitesource.agent.api.model.DependencyInfo;
 import org.whitesource.agent.api.model.ExclusionInfo;
 import org.whitesource.agent.report.PolicyCheckReport;
+import org.whitesource.maven.params.AggregateModules;
 import org.whitesource.maven.utils.dependencies.*;
 
 import java.io.File;
@@ -119,17 +120,10 @@ public abstract class AgentMojo extends WhitesourceMojo {
     protected boolean ignorePomModules;
 
     /**
-     * Optional. Set to true to to combine all pom modules into a single project with a dependency flat list (no hierarchy).
+     * Optional. Set enabled = true to combine all pom modules into a single WhiteSource project with an aggregated dependency flat list (no hierarchy).
      */
-    @Parameter(alias = "combinePomModules", property = Constants.COMBINE_POM_MODULES, required = false, defaultValue = "false")
-    protected boolean combinePomModules;
-
-    /**
-     * Optional. Name of the White Source project to update when using parameter combinePomModules = true.
-     * If omitted, default naming convention will apply (artifactId of the parent pom).
-     */
-    @Parameter(alias = "projectName", property = Constants.PROJECT_NAME, required = false)
-    protected String projectName;
+    @Parameter(alias = "aggregateModules", property = Constants.AGGREGATE_MODULES, required = false)
+    protected AggregateModules aggregateModules;
 
     @Parameter(defaultValue = "${reactorProjects}", required = true, readonly = true)
     protected Collection<MavenProject> reactorProjects;
@@ -402,7 +396,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
         debugProjectInfos(projectInfos);
 
         // combine all pom modules into a single project
-        if (combinePomModules) {
+        if (aggregateModules.isEnabled()) {
             // collect dependencies as flat list
             Set<DependencyInfo> flatDependencies = new HashSet<DependencyInfo>();
             for (AgentProjectInfo projectInfo : projectInfos) {
@@ -416,15 +410,16 @@ public abstract class AgentMojo extends WhitesourceMojo {
             projectInfos.clear();
 
             // create combined project
-            AgentProjectInfo combinedProject = new AgentProjectInfo();
-            combinedProject.setCoordinates(extractCoordinates(mavenProject));
-            combinedProject.setProjectToken(projectToken);
-            combinedProject.getDependencies().addAll(flatDependencies);
+            AgentProjectInfo aggregatingProject = new AgentProjectInfo();
+            aggregatingProject.setCoordinates(extractCoordinates(mavenProject));
+            aggregatingProject.setProjectToken(aggregateModules.getProjectToken());
+            aggregatingProject.getDependencies().addAll(flatDependencies);
             // override artifact id with project name
+            String projectName = aggregateModules.getProjectName();
             if (StringUtils.isNotBlank(projectName)) {
-                combinedProject.getCoordinates().setArtifactId(projectName);
+                aggregatingProject.getCoordinates().setArtifactId(projectName);
             }
-            projectInfos.add(combinedProject);
+            projectInfos.add(aggregatingProject);
         }
 
         return projectInfos;

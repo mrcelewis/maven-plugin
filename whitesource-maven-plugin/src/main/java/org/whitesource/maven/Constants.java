@@ -43,7 +43,8 @@ public final class Constants {
     public static final String EXCLUDES = PLUGIN_PREFIX + "excludes";
     public static final String SCOPE = PLUGIN_PREFIX + "scope";
     public static final String IGNORE_POM_MODULES = PLUGIN_PREFIX + "ignorePomModules";
-    public static final String COMBINE_POM_MODULES = PLUGIN_PREFIX + "combinePomModules";
+    public static final String AGGREGATE_MODULES = PLUGIN_PREFIX + "aggregateModules";
+    public static final String ENABLED = PLUGIN_PREFIX + "enabled";
 
 	/* --- Errors --- */
 
