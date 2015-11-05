@@ -15,7 +15,6 @@ import org.whitesource.agent.api.model.Coordinates;
 import org.whitesource.agent.api.model.DependencyInfo;
 import org.whitesource.agent.api.model.ExclusionInfo;
 import org.whitesource.agent.report.PolicyCheckReport;
-import org.whitesource.maven.params.AggregateModules;
 import org.whitesource.maven.utils.dependencies.*;
 
 import java.io.File;
@@ -119,14 +118,30 @@ public abstract class AgentMojo extends WhitesourceMojo {
     @Parameter(alias = "ignorePomModules", property = Constants.IGNORE_POM_MODULES, required = false, defaultValue = "true")
     protected boolean ignorePomModules;
 
-    /**
-     * Optional. Set enabled = true to combine all pom modules into a single WhiteSource project with an aggregated dependency flat list (no hierarchy).
-     */
-    @Parameter(alias = "aggregateModules", property = Constants.AGGREGATE_MODULES, required = false)
-    protected AggregateModules aggregateModules;
-
     @Parameter(defaultValue = "${reactorProjects}", required = true, readonly = true)
     protected Collection<MavenProject> reactorProjects;
+
+    /* --- Aggregate Modules Parameters --- */
+
+    /**
+     * Optional. Set to true to combine all pom modules into a single WhiteSource project with an aggregated dependency flat list (no hierarchy).
+     */
+    @Parameter(alias = "aggregateModules", property = Constants.AGGREGATE_MODULES, required = false, defaultValue = "false")
+    protected boolean aggregateModules;
+
+    /**
+     * Optional. The aggregated project name that will appear in WhiteSource.
+     * If omitted and no project token defined, defaults to pom artifactId.
+     */
+    @Parameter(alias = "aggregateProjectName", property = Constants.AGGREGATE_MODULES_PROJECT_NAME, required = false)
+    protected String aggregateProjectName;
+
+    /**
+     * Optional. Unique identifier of the aggregated White Source project to update.
+     * If omitted, default naming convention will apply.
+     */
+    @Parameter(alias = "aggregateProjectToken", property = Constants.AGGREGATE_MODULES_PROJECT_TOKEN, required = false)
+    protected String aggregateProjectToken;
 
     /* --- Constructors --- */
 
@@ -384,7 +399,6 @@ public abstract class AgentMojo extends WhitesourceMojo {
 
     protected Collection<AgentProjectInfo> extractProjectInfos() throws MojoExecutionException {
         Collection<AgentProjectInfo> projectInfos = new ArrayList<AgentProjectInfo>();
-
         for (MavenProject project : reactorProjects) {
             if (shouldProcess(project)) {
                 projectInfos.add(processProject(project));
@@ -392,11 +406,10 @@ public abstract class AgentMojo extends WhitesourceMojo {
                 info("skipping " + project.getId());
             }
         }
-
         debugProjectInfos(projectInfos);
 
         // combine all pom modules into a single project
-        if (aggregateModules.isEnabled()) {
+        if (aggregateModules) {
             // collect dependencies as flat list
             Set<DependencyInfo> flatDependencies = new HashSet<DependencyInfo>();
             for (AgentProjectInfo projectInfo : projectInfos) {
@@ -412,16 +425,14 @@ public abstract class AgentMojo extends WhitesourceMojo {
             // create combined project
             AgentProjectInfo aggregatingProject = new AgentProjectInfo();
             aggregatingProject.setCoordinates(extractCoordinates(mavenProject));
-            aggregatingProject.setProjectToken(aggregateModules.getProjectToken());
+            aggregatingProject.setProjectToken(aggregateProjectToken);
             aggregatingProject.getDependencies().addAll(flatDependencies);
             // override artifact id with project name
-            String projectName = aggregateModules.getProjectName();
-            if (StringUtils.isNotBlank(projectName)) {
-                aggregatingProject.getCoordinates().setArtifactId(projectName);
+            if (StringUtils.isNotBlank(aggregateProjectName)) {
+                aggregatingProject.getCoordinates().setArtifactId(aggregateProjectName);
             }
             projectInfos.add(aggregatingProject);
         }
-
         return projectInfos;
     }
 

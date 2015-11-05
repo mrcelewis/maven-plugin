@@ -35,7 +35,6 @@ public final class Constants {
     public static final String IGNORE_TEST_SCOPE_DEPENDENCIES = PLUGIN_PREFIX + "ignoreTestScopeDependencies";
     public static final String OUTPUT_DIRECTORY = PLUGIN_PREFIX + "outputDirectory";
 	public static final String PROJECT_TOKEN = PLUGIN_PREFIX + "projectToken";
-	public static final String PROJECT_NAME = PLUGIN_PREFIX + "projectName";
     public static final String MODULE_TOKENS = PLUGIN_PREFIX + "moduleTokens";
     public static final String SPECIAL_MODULE_TOKENS = PLUGIN_PREFIX + "specialModuleTokens";
     public static final String IGNORE = PLUGIN_PREFIX + "ignore";
@@ -44,7 +43,8 @@ public final class Constants {
     public static final String SCOPE = PLUGIN_PREFIX + "scope";
     public static final String IGNORE_POM_MODULES = PLUGIN_PREFIX + "ignorePomModules";
     public static final String AGGREGATE_MODULES = PLUGIN_PREFIX + "aggregateModules";
-    public static final String ENABLED = PLUGIN_PREFIX + "enabled";
+	public static final String AGGREGATE_MODULES_PROJECT_NAME = PLUGIN_PREFIX + "aggregateProjectName";
+	public static final String AGGREGATE_MODULES_PROJECT_TOKEN = PLUGIN_PREFIX + "aggregateProjectToken";
 
 	/* --- Errors --- */
 
