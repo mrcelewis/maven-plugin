@@ -45,6 +45,7 @@ public final class Constants {
     public static final String AGGREGATE_MODULES = PLUGIN_PREFIX + "aggregateModules";
 	public static final String AGGREGATE_MODULES_PROJECT_NAME = PLUGIN_PREFIX + "aggregateProjectName";
 	public static final String AGGREGATE_MODULES_PROJECT_TOKEN = PLUGIN_PREFIX + "aggregateProjectToken";
+	public static final String REQUESTER_EMAIL = PLUGIN_PREFIX + "requesterEmail";
 
 	/* --- Errors --- */
 

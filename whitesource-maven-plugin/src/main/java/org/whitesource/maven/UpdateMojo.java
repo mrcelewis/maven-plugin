@@ -120,12 +120,12 @@ public class UpdateMojo extends AgentMojo {
                     throw new MojoExecutionException(msg); // this is handled in base class
                 } else {
                     info("All dependencies conform with the organization's policies.");
-                    info("Sending updates to White Source");
-                    updateResult = service.update(orgToken, product, productVersion, projectInfos);
+                    info("Sending updates to WhiteSource");
+                    updateResult = service.update(orgToken, requesterEmail, product, productVersion, projectInfos);
                 }
             } else {
-                info("Sending updates to White Source");
-                updateResult = service.update(orgToken, product, productVersion, projectInfos);
+                info("Sending updates to WhiteSource");
+                updateResult = service.update(orgToken, requesterEmail, product, productVersion, projectInfos);
             }
             logResult(updateResult);
         } catch (WssServiceException e) {

@@ -143,6 +143,12 @@ public abstract class AgentMojo extends WhitesourceMojo {
     @Parameter(alias = "aggregateProjectToken", property = Constants.AGGREGATE_MODULES_PROJECT_TOKEN, required = false)
     protected String aggregateProjectToken;
 
+    /**
+     * Optional. Email of the requester as appears in WhiteSource.
+     */
+    @Parameter(alias = "requesterEmail", property = Constants.REQUESTER_EMAIL, required = false)
+    protected String requesterEmail;
+
     /* --- Constructors --- */
 
     protected AgentMojo() {
