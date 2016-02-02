@@ -459,17 +459,20 @@ public abstract class AgentMojo extends WhitesourceMojo {
         if (project == null) { return false; }
 
         boolean process = true;
-
         if (ignorePomModules && POM.equals(project.getPackaging())) {
             process = false;
+            debug("Ignoring " + project.getId() + ", reason: ignorePomModules=" + String.valueOf(ignorePomModules));
         } else if (project.equals(mavenProject)) {
             process = !ignore;
+            if (!process) {
+                debug("Ignoring " + project.getId() + ", reason: marked as ignored");
+            }
         } else if (excludes.length > 0 && matchAny(project.getArtifactId(), excludes)) {
             process = false;
+            debug("Ignoring " + project.getId() + ", reason: marked as excluded");
         } else if (includes.length > 0 && matchAny(project.getArtifactId(), includes)) {
             process = true;
         }
-
         return process;
     }
 
