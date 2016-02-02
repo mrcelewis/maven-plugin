@@ -94,7 +94,7 @@ public abstract class WhitesourceMojo extends AbstractMojo {
             }
         }
 
-        info("Total execution time is " + (System.currentTimeMillis() - startTime) + " [msec]");
+        debug("Total execution time is " + (System.currentTimeMillis() - startTime) + " [msec]");
     }
 
     /* --- Protected methods --- */
@@ -121,7 +121,7 @@ public abstract class WhitesourceMojo extends AbstractMojo {
                     proxySettings.getUsername(),
                     proxySettings.getPassword());
         } else {
-            info("No proxy settings");
+            info("No Proxy Settings");
         }
     }
 

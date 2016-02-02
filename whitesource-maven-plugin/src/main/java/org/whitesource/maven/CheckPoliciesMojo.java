@@ -55,7 +55,7 @@ public class CheckPoliciesMojo extends AgentMojo {
     @Override
     public void doExecute() throws MojoExecutionException, MojoFailureException {
         if (reactorProjects == null) {
-            info("No projects found. Skipping update");
+            info("No Projects Found. Skipping Update");
             return;
         }
 
@@ -95,7 +95,7 @@ public class CheckPoliciesMojo extends AgentMojo {
 
     private void sendCheckPolicies(Collection<AgentProjectInfo> projectInfos) throws MojoFailureException, MojoExecutionException {
         try {
-            info("Checking policies...");
+            info("Checking Policies");
             CheckPoliciesResult result = service.checkPolicies(orgToken, product, productVersion, projectInfos);
 
             if (outputDirectory == null ||

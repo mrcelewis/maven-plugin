@@ -224,13 +224,13 @@ public abstract class AgentMojo extends WhitesourceMojo {
 
     protected void debugProjectInfos(Collection<AgentProjectInfo> projectInfos) {
         debug("----------------- dumping projectInfos -----------------");
-        debug("Total number of projects : " + projectInfos.size());
+        debug("Total Number of Projects : " + projectInfos.size());
 
         for (AgentProjectInfo projectInfo : projectInfos) {
-            debug("Project coordinates: " + projectInfo.getCoordinates().toString());
-            debug("Project parent coordinates: " + (projectInfo.getParentCoordinates() == null ? "" : projectInfo.getParentCoordinates().toString()));
-            debug("Project token: " + projectInfo.getProjectToken());
-            debug("total # of dependencies: " + projectInfo.getDependencies().size());
+            debug("Project Coordinates: " + projectInfo.getCoordinates().toString());
+            debug("Project Parent Coordinates: " + (projectInfo.getParentCoordinates() == null ? "" : projectInfo.getParentCoordinates().toString()));
+            debug("Project Token: " + projectInfo.getProjectToken());
+            debug("Total Number of Dependencies: " + projectInfo.getDependencies().size());
             for (DependencyInfo info : projectInfo.getDependencies()) {
                 debug(info.toString() + " SHA-1: " + info.getSha1());
             }
@@ -242,7 +242,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
     protected AgentProjectInfo processProject(MavenProject project) throws MojoExecutionException {
         long startTime = System.currentTimeMillis();
 
-        info("processing " + project.getId());
+        info("Processing " + project.getId());
 
         AgentProjectInfo projectInfo = new AgentProjectInfo();
 
@@ -265,13 +265,12 @@ public abstract class AgentMojo extends WhitesourceMojo {
         try {
            projectInfo.getDependencies().addAll(collectDependencyStructure(project));
         } catch (DependencyResolutionException e) {
-            debug("error resolving project dependencies, fallback to direct dependencies only", e);
+            debug("Error resolving project dependencies, fallback to direct dependencies only", e);
             projectInfo.getDependencies().clear();
             projectInfo.getDependencies().addAll(collectDirectDependencies(project));
         }
 
-        info("Total processing time is " + (System.currentTimeMillis() - startTime) + " [msec]");
-
+        debug("Total Processing Time = " + (System.currentTimeMillis() - startTime) + " [msec]");
         return projectInfo;
     }
 
@@ -408,8 +407,6 @@ public abstract class AgentMojo extends WhitesourceMojo {
         for (MavenProject project : reactorProjects) {
             if (shouldProcess(project)) {
                 projectInfos.add(processProject(project));
-            } else {
-                info("skipping " + project.getId());
             }
         }
         debugProjectInfos(projectInfos);
@@ -461,15 +458,15 @@ public abstract class AgentMojo extends WhitesourceMojo {
         boolean process = true;
         if (ignorePomModules && POM.equals(project.getPackaging())) {
             process = false;
-            debug("Ignoring " + project.getId() + ", reason: ignorePomModules=" + String.valueOf(ignorePomModules));
+            info("Skipping " + project.getId() + " (ignorePomModules=" + String.valueOf(ignorePomModules) + ")");
         } else if (project.equals(mavenProject)) {
             process = !ignore;
             if (!process) {
-                debug("Ignoring " + project.getId() + ", reason: marked as ignored");
+                info("Skipping " + project.getId() + " (marked as ignored)");
             }
         } else if (excludes.length > 0 && matchAny(project.getArtifactId(), excludes)) {
             process = false;
-            debug("Ignoring " + project.getId() + ", reason: marked as excluded");
+            info("Skipping " + project.getId() + " (marked as excluded)");
         } else if (includes.length > 0 && matchAny(project.getArtifactId(), includes)) {
             process = true;
         }
@@ -477,7 +474,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
     }
 
     protected void generateReport(CheckPoliciesResult result) throws MojoExecutionException {
-        info("Generating policy check report");
+        info("Generating Policy Check Report");
         try {
             PolicyCheckReport report = new PolicyCheckReport(result);
             report.generate(outputDirectory, false);

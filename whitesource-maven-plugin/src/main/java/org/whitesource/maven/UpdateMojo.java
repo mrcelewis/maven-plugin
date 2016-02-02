@@ -63,7 +63,7 @@ public class UpdateMojo extends AgentMojo {
     @Override
     public void doExecute() throws MojoExecutionException, MojoFailureException {
         if (reactorProjects == null) {
-            info("No projects found. Skipping update");
+            info("No Projects Found. Skipping Update");
             return;
         }
 
@@ -105,7 +105,7 @@ public class UpdateMojo extends AgentMojo {
         try {
             UpdateInventoryResult updateResult;
             if (checkPolicies) {
-                info("Checking policies...");
+                info("Checking Policies");
                 CheckPoliciesResult result = service.checkPolicies(orgToken, product, productVersion, projectInfos);
 
                 if (outputDirectory == null ||
@@ -120,11 +120,11 @@ public class UpdateMojo extends AgentMojo {
                     throw new MojoExecutionException(msg); // this is handled in base class
                 } else {
                     info("All dependencies conform with the organization's policies.");
-                    info("Sending updates to WhiteSource");
+                    info("Sending Update Request to WhiteSource");
                     updateResult = service.update(orgToken, requesterEmail, product, productVersion, projectInfos);
                 }
             } else {
-                info("Sending updates to WhiteSource");
+                info("Sending Update Request to WhiteSource");
                 updateResult = service.update(orgToken, requesterEmail, product, productVersion, projectInfos);
             }
             logResult(updateResult);
@@ -134,29 +134,35 @@ public class UpdateMojo extends AgentMojo {
     }
 
     private void logResult(UpdateInventoryResult result) {
-        info("Inventory update results for " + result.getOrganization());
+        info("");
+        info("------------------------------------------------------------------------");
+        info("Inventory Update Result for " + result.getOrganization());
+        info("------------------------------------------------------------------------");
 
         // newly created projects
         Collection<String> createdProjects = result.getCreatedProjects();
         if (createdProjects.isEmpty()) {
-            info("No new projects found.");
+//            info("No new projects found.");
         } else {
-            info("Newly created projects:");
+            info("");
+            info("Newly Created Projects:");
             for (String projectName : createdProjects) {
-                info(projectName);
+                info("* " + projectName);
             }
         }
 
         // updated projects
         Collection<String> updatedProjects = result.getUpdatedProjects();
         if (updatedProjects.isEmpty()) {
-            info("No projects were updated.");
+//            info("No projects were updated.");
         } else {
-            info("Updated projects:");
+            info("");
+            info("Updated Projects:");
             for (String projectName : updatedProjects) {
-                info(projectName);
+                info("* " + projectName);
             }
         }
+        info("");
     }
 
 }
