@@ -15,19 +15,16 @@
  */
 package org.whitesource.maven;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProject;
 import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
 import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.client.WssServiceException;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Send check policies request of open source software usage information to White Source.
@@ -74,24 +71,6 @@ public class CheckPoliciesMojo extends AgentMojo {
     }
 
     /* --- Private methods --- */
-
-    private void init() {
-        // copy token for modules with special names into moduleTokens.
-        for (Map.Entry<Object, Object> entry : specialModuleTokens.entrySet()) {
-            moduleTokens.put(entry.getKey().toString(), entry.getValue().toString());
-        }
-
-        // take product name and version from top level project
-        MavenProject topLevelProject = session.getTopLevelProject();
-        if (topLevelProject != null) {
-            if (StringUtils.isBlank(product)) {
-                product = topLevelProject.getName();
-            }
-            if (StringUtils.isBlank(product)) {
-                product = topLevelProject.getArtifactId();
-            }
-        }
-    }
 
     private void sendCheckPolicies(Collection<AgentProjectInfo> projectInfos) throws MojoFailureException, MojoExecutionException {
         try {

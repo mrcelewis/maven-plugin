@@ -162,6 +162,27 @@ public abstract class AgentMojo extends WhitesourceMojo {
 
     /* --- Protected methods --- */
 
+    protected void init() {
+        // copy token for modules with special names into moduleTokens.
+        for (Map.Entry<Object, Object> entry : specialModuleTokens.entrySet()) {
+            moduleTokens.put(entry.getKey().toString(), entry.getValue().toString());
+        }
+
+        // take product name and version from top level project
+        MavenProject topLevelProject = session.getTopLevelProject();
+        if (topLevelProject != null) {
+            if (StringUtils.isBlank(product)) {
+                product = topLevelProject.getName();
+            }
+            if (StringUtils.isBlank(product)) {
+                product = topLevelProject.getArtifactId();
+            }
+        }
+
+        // properties
+        orgToken = session.getSystemProperties().getProperty(Constants.ORG_TOKEN, orgToken);
+    }
+
     protected DependencyInfo getDependencyInfo(Dependency dependency) {
         DependencyInfo info = new DependencyInfo();
 

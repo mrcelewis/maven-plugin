@@ -65,6 +65,9 @@ public abstract class WhitesourceMojo extends AbstractMojo {
     @Component( hint = "default" )
     protected ProjectDependenciesResolver projectDependenciesResolver;
 
+    @Parameter(alias = "wssUrl", property = ClientConstants.SERVICE_URL_KEYWORD, required = false, defaultValue = ClientConstants.DEFAULT_SERVICE_URL)
+    protected String wssUrl;
+
     protected WhitesourceService service;
 
     /* --- Abstract methods --- */
@@ -100,8 +103,7 @@ public abstract class WhitesourceMojo extends AbstractMojo {
     /* --- Protected methods --- */
 
     protected void createService() {
-        String serviceUrl = session.getSystemProperties().getProperty(
-                ClientConstants.SERVICE_URL_KEYWORD, ClientConstants.DEFAULT_SERVICE_URL);
+        String serviceUrl = session.getSystemProperties().getProperty(ClientConstants.SERVICE_URL_KEYWORD, wssUrl);
         info("Service URL is " + serviceUrl);
 
         service = new WhitesourceService(Constants.AGENT_TYPE, Constants.AGENT_VERSION, serviceUrl);
