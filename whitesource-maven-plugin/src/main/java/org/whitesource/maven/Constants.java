@@ -25,13 +25,14 @@ public final class Constants {
 	/* --- Configuration --- */
 
 	public static final String AGENT_TYPE = "maven-plugin";
-	public static final String AGENT_VERSION = "2.2.5";
+	public static final String AGENT_VERSION = "2.2.7";
 
     public static final String PLUGIN_PREFIX = "org.whitesource.";
     public static final String ORG_TOKEN = PLUGIN_PREFIX + "orgToken";
     public static final String PRODUCT = PLUGIN_PREFIX + "product";
     public static final String PRODUCT_VERSION = PLUGIN_PREFIX + "productVersion";
     public static final String CHECK_POLICIES = PLUGIN_PREFIX + "checkPolicies";
+    public static final String FORCE_CHECK_ALL_DEPENDENCIES = PLUGIN_PREFIX + "forceCheckAllDependencies";
     public static final String IGNORE_TEST_SCOPE_DEPENDENCIES = PLUGIN_PREFIX + "ignoreTestScopeDependencies";
     public static final String OUTPUT_DIRECTORY = PLUGIN_PREFIX + "outputDirectory";
 	public static final String PROJECT_TOKEN = PLUGIN_PREFIX + "projectToken";

@@ -9,7 +9,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.DependencyResolutionException;
 import org.apache.maven.project.MavenProject;
 import org.whitesource.agent.api.ChecksumUtils;
-import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
+import org.whitesource.agent.api.dispatch.BaseCheckPoliciesResult;
 import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.api.model.Coordinates;
 import org.whitesource.agent.api.model.DependencyInfo;
@@ -494,7 +494,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
         return process;
     }
 
-    protected void generateReport(CheckPoliciesResult result) throws MojoExecutionException {
+    protected void generateReport(BaseCheckPoliciesResult result) throws MojoExecutionException {
         info("Generating Policy Check Report");
         try {
             PolicyCheckReport report = new PolicyCheckReport(result);

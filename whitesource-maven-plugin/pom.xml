@@ -13,7 +13,7 @@
     <name>White Source maven plugin</name>
     <dependencies>
 
-        <!-- White Source -->
+        <!-- WhiteSource -->
         <dependency>
             <groupId>org.whitesource</groupId>
             <artifactId>wss-agent-api-client</artifactId>

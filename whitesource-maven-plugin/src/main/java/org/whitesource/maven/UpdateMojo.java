@@ -21,7 +21,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.whitesource.agent.api.dispatch.CheckPoliciesResult;
+import org.whitesource.agent.api.dispatch.CheckPolicyComplianceResult;
 import org.whitesource.agent.api.dispatch.UpdateInventoryResult;
 import org.whitesource.agent.api.model.AgentProjectInfo;
 import org.whitesource.agent.client.WssServiceException;
@@ -44,11 +44,22 @@ import java.util.Collection;
         aggregator = true )
 public class UpdateMojo extends AgentMojo {
 
+    /* --- Members --- */
+
     /**
      * Optional. Set to true to check policies.
      */
     @Parameter( alias = "checkPolicies", property = Constants.CHECK_POLICIES, required = false, defaultValue = "false")
     private boolean checkPolicies;
+
+    /**
+     * Optional. Set to true to force check policies for all dependencies.
+     * If set to false policies will be checked only for new dependencies introduced to the WhiteSource projects.
+     *
+     * Important: Only used if {@link UpdateMojo#checkPolicies} is set to true.
+     */
+    @Parameter( alias = "forceCheckAllDependencies", property = Constants.FORCE_CHECK_ALL_DEPENDENCIES, required = false, defaultValue = "false")
+    private boolean forceCheckAllDependencies;
 
     /* --- Constructors --- */
 
@@ -84,6 +95,8 @@ public class UpdateMojo extends AgentMojo {
         super.init();
         checkPolicies = Boolean.parseBoolean(session.getSystemProperties().getProperty(
                 Constants.CHECK_POLICIES, Boolean.toString(checkPolicies)));
+        forceCheckAllDependencies = Boolean.parseBoolean(session.getSystemProperties().getProperty(
+                Constants.FORCE_CHECK_ALL_DEPENDENCIES, Boolean.toString(forceCheckAllDependencies)));
     }
 
     private void sendUpdate(Collection<AgentProjectInfo> projectInfos) throws MojoFailureException, MojoExecutionException {
@@ -91,7 +104,8 @@ public class UpdateMojo extends AgentMojo {
             UpdateInventoryResult updateResult;
             if (checkPolicies) {
                 info("Checking Policies");
-                CheckPoliciesResult result = service.checkPolicies(orgToken, product, productVersion, projectInfos);
+                CheckPolicyComplianceResult result = service.checkPolicyCompliance(
+                        orgToken, product, productVersion, projectInfos, forceCheckAllDependencies);
 
                 if (outputDirectory == null ||
                         (!outputDirectory.exists() && !outputDirectory.mkdirs())) {
