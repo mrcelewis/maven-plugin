@@ -44,13 +44,13 @@ public abstract class WhitesourceMojo extends AbstractMojo {
     /**
      * Indicates whether the build will continue even if there are errors.
      */
-    @Parameter(defaultValue = "false")
+    @Parameter( alias = "failOnError", property = Constants.FAIL_ON_ERROR, required = false, defaultValue = "false")
     protected boolean failOnError;
 
     /**
      * Set this to 'true' to skip the maven execution.
      */
-    @Parameter(defaultValue = "false")
+    @Parameter( alias = "skip", property = Constants.SKIP, required = false, defaultValue = "false")
     protected boolean skip;
 
     @Component
