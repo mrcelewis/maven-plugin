@@ -49,7 +49,8 @@ public final class Constants {
 	public static final String REQUESTER_EMAIL = PLUGIN_PREFIX + "requesterEmail";
 	public static final String FAIL_ON_ERROR = PLUGIN_PREFIX + "failOnError";
 	public static final String SKIP = PLUGIN_PREFIX + "skip";
-	
+	public static final String ALTERNATIVE_SERVICE_URL_KEYWORD = PLUGIN_PREFIX + "wssUrl";
+
 	/* --- Errors --- */
 
 	public static final String ERROR_SERVICE_CONNECTION = "Error communicating with service: ";
