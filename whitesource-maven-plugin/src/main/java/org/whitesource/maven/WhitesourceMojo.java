@@ -54,6 +54,9 @@ public abstract class WhitesourceMojo extends AbstractMojo {
     @Parameter(alias = "skip", property = Constants.SKIP, required = false, defaultValue = "false")
     protected boolean skip;
 
+    @Parameter(alias = "autoDetectProxySettings", property = Constants.AUTO_DETECT_PROXY_SETTINGS, defaultValue = "false")
+    protected boolean autoDetectProxySettings;
+
     @Component
     protected MavenSession session;
 
@@ -112,7 +115,7 @@ public abstract class WhitesourceMojo extends AbstractMojo {
         }
         info("Service URL is " + serviceUrl);
 
-        service = new WhitesourceService(Constants.AGENT_TYPE, Constants.AGENT_VERSION, serviceUrl);
+        service = new WhitesourceService(Constants.AGENT_TYPE, Constants.AGENT_VERSION, serviceUrl, autoDetectProxySettings);
         if (service == null) {
             info("Failed to initiate WhiteSource Service");
         } else {
