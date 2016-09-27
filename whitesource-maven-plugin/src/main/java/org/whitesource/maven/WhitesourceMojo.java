@@ -126,11 +126,12 @@ public abstract class WhitesourceMojo extends AbstractMojo {
         ProxySettingsProvider proxySettingsProvider = ProxySettingsProviderFactory.getProxySettingsProviderForUrl(serviceUrl, session);
         if (proxySettingsProvider.isProxyConfigured()) {
             ProxySettings proxySettings = proxySettingsProvider.getProxySettings();
-            service.getClient().setProxy(
-                    proxySettings.getHostname(),
-                    proxySettings.getPort(),
-                    proxySettings.getUsername(),
-                    proxySettings.getPassword());
+            service.getClient().setProxy(proxySettings.getHostname(), proxySettings.getPort(),
+                    proxySettings.getUsername(), proxySettings.getPassword());
+            info("Proxy hostname: " + proxySettings.getHostname());
+            info("Proxy port: " + proxySettings.getPort());
+            debug("Proxy username: " + proxySettings.getUsername());
+            debug("Proxy password: " + proxySettings.getPassword());
         } else {
             info("No Proxy Settings");
         }
