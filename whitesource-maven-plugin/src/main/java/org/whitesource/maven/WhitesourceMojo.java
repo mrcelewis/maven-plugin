@@ -15,7 +15,6 @@
  */
 package org.whitesource.maven;
 
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -24,6 +23,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.DependencyResolutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectDependenciesResolver;
 import org.whitesource.agent.client.ClientConstants;
@@ -31,7 +31,6 @@ import org.whitesource.agent.client.WhitesourceService;
 import org.whitesource.maven.utils.proxy.ProxySettings;
 import org.whitesource.maven.utils.proxy.ProxySettingsProvider;
 import org.whitesource.maven.utils.proxy.ProxySettingsProviderFactory;
-
 
 /**
  * Concrete implementation holding common functionality to all goals in this plugin.
@@ -76,7 +75,7 @@ public abstract class WhitesourceMojo extends AbstractMojo {
 
     /* --- Abstract methods --- */
 
-    public abstract void doExecute() throws MojoExecutionException, MojoFailureException;
+    public abstract void doExecute() throws MojoExecutionException, MojoFailureException, DependencyResolutionException;
 
     /* --- Concrete implementation methods --- */
 
@@ -92,6 +91,8 @@ public abstract class WhitesourceMojo extends AbstractMojo {
             try {
                 createService();
                 doExecute();
+            } catch (DependencyResolutionException e) {
+                handleError(e);
             } catch (MojoExecutionException e) {
                 handleError(e);
             } catch (RuntimeException e) {

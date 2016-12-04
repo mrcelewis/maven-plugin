@@ -260,7 +260,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
         debug("----------------- dump finished -----------------");
     }
 
-    protected AgentProjectInfo processProject(MavenProject project) throws MojoExecutionException {
+    protected AgentProjectInfo processProject(MavenProject project) throws MojoExecutionException, DependencyResolutionException {
         long startTime = System.currentTimeMillis();
 
         info("Processing " + project.getId());
@@ -286,9 +286,8 @@ public abstract class AgentMojo extends WhitesourceMojo {
         try {
            projectInfo.getDependencies().addAll(collectDependencyStructure(project));
         } catch (DependencyResolutionException e) {
-            debug("Error resolving project dependencies, fallback to direct dependencies only", e);
-            projectInfo.getDependencies().clear();
-            projectInfo.getDependencies().addAll(collectDirectDependencies(project));
+            error("Error resolving dependencies for project " + project.getName() + ", exiting");
+            throw e;
         }
 
         debug("Total Processing Time = " + (System.currentTimeMillis() - startTime) + " [msec]");
@@ -423,7 +422,7 @@ public abstract class AgentMojo extends WhitesourceMojo {
         return match;
     }
 
-    protected Collection<AgentProjectInfo> extractProjectInfos() throws MojoExecutionException {
+    protected Collection<AgentProjectInfo> extractProjectInfos() throws MojoExecutionException, DependencyResolutionException {
         Collection<AgentProjectInfo> projectInfos = new ArrayList<AgentProjectInfo>();
         for (MavenProject project : reactorProjects) {
             if (shouldProcess(project)) {
