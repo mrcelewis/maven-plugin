@@ -45,6 +45,12 @@ public abstract class AgentMojo extends WhitesourceMojo {
     protected String orgToken;
 
     /**
+     * Optional. Updates organization inventory regardless of policy violations.
+     */
+    @Parameter(alias = "forceUpdate", property = Constants.FORCE_UPDATE, required = false, defaultValue = "false")
+    protected boolean forceUpdate;
+
+    /**
      * Product to update Name or Unique identifier.
      */
     @Parameter(alias = "product", property = Constants.PRODUCT, required = false)

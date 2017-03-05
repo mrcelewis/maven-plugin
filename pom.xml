@@ -55,6 +55,11 @@
             <name>Tom Shapira</name>
             <email>tom.shapira@whitesourcesoftware.com</email>
         </developer>
+        <developer>
+            <id>artiom.petrov</id>
+            <name>Artiom Petrov</name>
+            <email>artiom.petrov@whitesourcesoftware.com</email>
+        </developer>
     </developers>
 
     <prerequisites>

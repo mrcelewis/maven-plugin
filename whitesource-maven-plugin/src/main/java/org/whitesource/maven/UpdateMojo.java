@@ -98,6 +98,8 @@ public class UpdateMojo extends AgentMojo {
                 Constants.CHECK_POLICIES, Boolean.toString(checkPolicies)));
         forceCheckAllDependencies = Boolean.parseBoolean(session.getSystemProperties().getProperty(
                 Constants.FORCE_CHECK_ALL_DEPENDENCIES, Boolean.toString(forceCheckAllDependencies)));
+        forceUpdate = Boolean.parseBoolean(session.getSystemProperties().getProperty(Constants.FORCE_UPDATE,
+                Boolean.toString(forceUpdate)));
     }
 
     private void sendUpdate(Collection<AgentProjectInfo> projectInfos) throws MojoFailureException, MojoExecutionException {
@@ -115,11 +117,13 @@ public class UpdateMojo extends AgentMojo {
                     generateReport(result);
                 }
 
-                if (result.hasRejections()) {
-                    String msg = "Some dependencies were rejected by the organization's policies.";
-                    throw new MojoExecutionException(msg); // this is handled in base class
+                boolean hasRejections = result.hasRejections();
+                if (hasRejections && !forceUpdate) {
+                    throw new MojoExecutionException("Some dependencies were rejected by the organization's policies."); // this is handled in base class
                 } else {
-                    info("All dependencies conform with the organization's policies.");
+                    String message = hasRejections ? "Some dependencies violate open source policies, however all" +
+                            " were force updated to organization inventory." : "All dependencies conform with open source policies.";
+                    info(message);
                     info("Sending Update Request to WhiteSource");
                     updateResult = service.update(orgToken, requesterEmail, product, productVersion, projectInfos);
                 }
