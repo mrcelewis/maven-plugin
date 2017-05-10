@@ -45,6 +45,14 @@ import java.util.Collection;
         aggregator = true )
 public class UpdateMojo extends AgentMojo {
 
+    /* --- Static members --- */
+
+    public static final String POLICY_VIOLATIONS_FOUND = "Some dependencies were rejected by the organization's policies";
+
+    public static final String NO_POLICY_VIOLATIONS = "All dependencies conform with the organization's policies";
+    public static final String SENDING_FORCE_UPDATE = "Force Update Enabled, Sending Update Request to WhiteSource";
+    public static final String SENDING_UPDATE = "Sending Update Request to WhiteSource";
+
     /* --- Members --- */
 
     /**
@@ -118,20 +126,26 @@ public class UpdateMojo extends AgentMojo {
                 }
 
                 boolean hasRejections = result.hasRejections();
-                if (hasRejections && !forceUpdate) {
-                    throw new MojoExecutionException("Some dependencies were rejected by the organization's policies."); // this is handled in base class
-                } else {
-                    String message = hasRejections ? "Some dependencies violate open source policies, however all" +
-                            " were force updated to organization inventory." : "All dependencies conform with open source policies.";
-                    info(message);
-                    info("Sending Update Request to WhiteSource");
+                if (!hasRejections) {
+                    info(NO_POLICY_VIOLATIONS);
+                }
+
+                if (!hasRejections || forceUpdate) {
+                    info(forceUpdate ? SENDING_FORCE_UPDATE : SENDING_UPDATE);
                     updateResult = service.update(orgToken, requesterEmail, product, productVersion, projectInfos);
+                    logResult(updateResult);
+                }
+
+                // check rejection last to support force update
+                if (hasRejections) {
+                    // this is handled in base class
+                    throw new MojoExecutionException(POLICY_VIOLATIONS_FOUND);
                 }
             } else {
-                info("Sending Update Request to WhiteSource");
+                info(SENDING_UPDATE);
                 updateResult = service.update(orgToken, requesterEmail, product, productVersion, projectInfos);
+                logResult(updateResult);
             }
-            logResult(updateResult);
         } catch (WssServiceException e) {
             throw new MojoExecutionException(Constants.ERROR_SERVICE_CONNECTION + e.getMessage(), e);
         }
