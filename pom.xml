@@ -17,7 +17,7 @@
         <module>whitesource-maven-utils</module>
     </modules>
 		
-	<name>White Source maven parent</name>
+	<name>whitesource-maven-parent</name>
     <description>Maven plugin to send open source software usage updates to White Source.</description>
     <url>http://www.github.com/whitesource/maven-plugin</url>
     <inceptionYear>2011</inceptionYear>
