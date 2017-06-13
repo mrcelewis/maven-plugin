@@ -390,7 +390,6 @@ public abstract class AgentMojo extends WhitesourceMojo {
         if (value == null) { return false; }
 
         boolean match = false;
-
         for (int i=0; i < patterns.length && !match; i++) {
             String pattern = patterns[i];
             if (pattern != null)  {
@@ -398,7 +397,6 @@ public abstract class AgentMojo extends WhitesourceMojo {
                 match = value.matches(regex);
             }
         }
-
         return match;
     }
 
@@ -490,11 +488,16 @@ public abstract class AgentMojo extends WhitesourceMojo {
             if (!process) {
                 info("Skipping " + project.getId() + " (marked as ignored)");
             }
-        } else if (excludes.length > 0 && matchAny(project.getArtifactId(), excludes)) {
-            process = false;
-            info("Skipping " + project.getId() + " (marked as excluded)");
-        } else if (includes.length > 0 && matchAny(project.getArtifactId(), includes)) {
-            process = true;
+        } else if (excludes.length > 0) {
+            process = !matchAny(project.getArtifactId(), excludes);
+            if (process) {
+                info("Skipping " + project.getId() + " (marked as excluded)");
+            }
+        } else if (includes.length > 0) {
+            process = matchAny(project.getArtifactId(), includes);
+            if (!process) {
+                info("Skipping " + project.getId() + " (not marked as included)");
+            }
         }
         return process;
     }
